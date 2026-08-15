@@ -50,7 +50,11 @@ export type PlanetName =
   | 'TrueLilith'
   | 'PartOfFortune'
   | 'Vertex'
-  | 'AntiVertex';
+  | 'AntiVertex'
+  | 'Ceres'
+  | 'Pallas'
+  | 'Juno'
+  | 'Vesta';
 
 export const ZODIAC_SIGNS = [
   'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
