@@ -9943,6 +9943,17 @@ function resolveUtcFromLocal(year, month, day, hour, minute, timeZone) {
   return new Date(guessUTC);
 }
 
+// Максимально широкие орбы для пересчёта аспектов при построении/пересчёте
+// карты — 15° на тип аспекта, столько же, сколько разрешает верхняя граница
+// (max) ползунков орба в настройках колеса ниже. Считаем аспекты с этим
+// "потолком", а не с орбами движка по умолчанию, чтобы ползунок орба в
+// настройках колеса мог реально расширить видимый набор аспектов (см.
+// комментарий внутри buildChartData).
+const WIDE_ASPECT_ORBS = {
+  conjunction: 15, opposition: 15, square: 15, trine: 15, sextile: 15,
+  semisextile: 15, semisquare: 15, sesquiquadrate: 15, quincunx: 15,
+};
+
 // Строит DATA (в том же формате, что и статический пример) из реального
 // расчёта движка по данным, введённым пользователем — зеркалит логику
 // src/__tests__/exportDemo.ts, но выполняется прямо в браузере.
@@ -9966,7 +9977,19 @@ function buildChartData(moment, location, label) {
     else if (d.fall) dignities[name] = 'fall';
   }
 
-  const aspects = base.aspects.map((a) => ({
+  // base.aspects посчитан движком с орбами по умолчанию (см. defaultOrb в
+  // src/astrological/aspects.ts) — этого достаточно для "стандартного" вида
+  // карты, но ползунок орба в настройках колеса позволяет пользователю
+  // РАСШИРИТЬ орб до 15° на тип аспекта (см. orbInput.max ниже). Если бы мы
+  // брали только base.aspects, аспекты за пределами орба по умолчанию
+  // физически отсутствовали бы в данных, и расширение ползунка молча ничего
+  // бы не показывало. Поэтому пересчитываем аспекты сразу с максимально
+  // широкими орбами (WIDE_ASPECT_ORBS, определён ниже) — а видимый набор
+  // сужается уже на фронтенде через isAspectVisible()/orbByType, что не
+  // меняет поведение "по умолчанию" (те же аспекты видны при дефолтных
+  // орбах), но даёт ползунку реальный эффект.
+  const wideAspects = AstraEngine.findAspects(base.points, { customOrbs: WIDE_ASPECT_ORBS });
+  const aspects = wideAspects.map((a) => ({
     a: a.pointA, b: a.pointB, type: a.type, orb: Number(a.orb.toFixed(2)), applying: a.applying,
   }));
 
@@ -10674,8 +10697,17 @@ ASPECT_TYPES_ALL.forEach((type) => {
   orbInput.title = 'Максимальный орб для этого типа аспекта, °';
   orbInput.addEventListener('click', (e) => e.stopPropagation()); // не переключать чекбокс кликом по числу
   orbInput.addEventListener('change', () => {
-    const v = Number(orbInput.value);
-    wheelSettings.orbByType[type] = Number.isFinite(v) ? Math.max(0, v) : DEFAULT_ORB_BY_TYPE[type];
+    // Пустое поле (браузер сам обнуляет невалидный ввод в <input type=number>
+    // до '') нельзя трактовать как орб 0° — это тихо скрыло бы все аспекты
+    // этого типа без объяснения. Пустое, нечисловое и отрицательное значение
+    // одинаково откатываются на орб по умолчанию для этого типа, и поле
+    // визуально обновляется тем же значением — иначе оно осталось бы пустым,
+    // а настройка внутри уже другая.
+    const raw = orbInput.value.trim();
+    const v = Number(raw);
+    const valid = raw !== '' && Number.isFinite(v) && v >= 0;
+    wheelSettings.orbByType[type] = valid ? v : DEFAULT_ORB_BY_TYPE[type];
+    orbInput.value = wheelSettings.orbByType[type];
     saveWheelSettings();
     rerenderWheelAndInsight();
   });
