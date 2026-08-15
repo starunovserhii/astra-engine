@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASTRA Engine — интерактивная демонстрация</title>
+<meta name="description" content="ASTRA Engine — собственный расчётный астрологический движок (TypeScript, MIT). Интерактивная демонстрация: натальная карта, 8 систем домов, аспекты.">
+<style>
+  :root {
+    --bg: #0e0d12;
+    --bg-panel: #16151c;
+    --bg-panel-2: #1c1b24;
+    --border: #2c2a36;
+    --text: #ece7db;
+    --text-dim: #9a95a8;
+    --accent: #cdaa6e;
+    --accent-dim: #8a6f45;
+    --fire: #c9705a;
+    --earth: #7d9270;
+    --air: #8fa9c0;
+    --water: #6d7fae;
+    --line: #3a3846;
+    font-family: 'Georgia', 'Times New Roman', serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: radial-gradient(ellipse at 50% -10%, #201f28 0%, var(--bg) 60%);
+    color: var(--text);
+    font-family: 'Iowan Old Style', 'Georgia', serif;
+    min-height: 100vh;
+  }
+  header {
+    padding: 2.5rem 2rem 1.5rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 {
+    font-weight: 400;
+    font-size: 1.9rem;
+    letter-spacing: 0.04em;
+    margin: 0 0 0.4rem;
+    color: var(--text);
+  }
+  header .subtitle {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    max-width: 640px;
+    margin: 0 auto;
+    line-height: 1.5;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  header .links {
+    margin-top: 1rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.85rem;
+  }
+  header .links a {
+    color: var(--accent);
+    text-decoration: none;
+    margin: 0 0.6rem;
+    border-bottom: 1px solid var(--accent-dim);
+  }
+  header .links a:hover { color: #e6c98a; }
+
+  main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 1.5rem;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 2rem;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+  }
+
+  .chart-panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    position: relative;
+  }
+  .chart-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+  .chart-toolbar .zoom-controls button {
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .chart-toolbar .zoom-controls button:hover { border-color: var(--accent-dim); }
+
+  #chart-wrap { width: 100%; aspect-ratio: 1 / 1; cursor: grab; touch-action: none; }
+  #chart-wrap.dragging { cursor: grabbing; }
+  #chart-svg { width: 100%; height: 100%; display: block; }
+
+  .planet-dot { cursor: pointer; }
+  .planet-dot:hover circle { stroke: var(--accent); stroke-width: 2; }
+  .planet-label { font-size: 13px; fill: var(--text); font-family: 'Segoe UI Symbol', 'Noto Sans Symbols', sans-serif; pointer-events: none; }
+  .planet-label.selected { fill: var(--accent); font-weight: bold; }
+  .sign-label { font-size: 15px; fill: var(--text-dim); text-anchor: middle; dominant-baseline: middle; font-family: 'Segoe UI Symbol', 'Noto Sans Symbols', sans-serif; }
+  .cusp-line { stroke: var(--line); stroke-width: 1; }
+  .cusp-line.angle { stroke: var(--accent-dim); stroke-width: 1.4; }
+  .house-num { font-size: 10px; fill: var(--text-dim); font-family: -apple-system, sans-serif; text-anchor: middle; }
+  .zodiac-wedge { stroke: var(--border); stroke-width: 0.5; }
+  .aspect-line { fill: none; opacity: 0.55; }
+  .aspect-line.dim { opacity: 0.12; }
+
+  aside {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.1rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  .panel h2 {
+    font-family: Georgia, serif;
+    font-size: 0.95rem;
+    font-weight: 400;
+    letter-spacing: 0.03em;
+    color: var(--accent);
+    margin: 0 0 0.7rem;
+    text-transform: uppercase;
+  }
+  .control-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.6rem;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+  .control-row select {
+    background: var(--bg-panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.3rem 0.4rem;
+    font-size: 0.8rem;
+    font-family: inherit;
+  }
+  .switch { position: relative; width: 36px; height: 20px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider-track {
+    position: absolute; inset: 0; background: var(--bg-panel-2);
+    border: 1px solid var(--border); border-radius: 20px; cursor: pointer; transition: 0.15s;
+  }
+  .slider-track::before {
+    content: ""; position: absolute; height: 14px; width: 14px; left: 2px; top: 2px;
+    background: var(--text-dim); border-radius: 50%; transition: 0.15s;
+  }
+  input:checked + .slider-track { border-color: var(--accent-dim); }
+  input:checked + .slider-track::before { transform: translateX(16px); background: var(--accent); }
+
+  #insight-empty { color: var(--text-dim); font-size: 0.85rem; line-height: 1.5; }
+  #insight-body { display: none; }
+  #insight-body.active { display: block; }
+  #insight-title { font-size: 1.1rem; color: var(--text); margin: 0 0 0.2rem; }
+  #insight-sub { color: var(--accent); font-size: 0.85rem; margin: 0 0 0.8rem; }
+  .fact-row { display: flex; justify-content: space-between; font-size: 0.82rem; padding: 0.3rem 0; border-bottom: 1px solid var(--border); color: var(--text-dim); }
+  .fact-row b { color: var(--text); font-weight: 400; }
+  #insight-aspects { margin-top: 0.7rem; font-size: 0.8rem; }
+  #insight-aspects li { color: var(--text-dim); margin-bottom: 0.25rem; list-style: none; }
+  #insight-aspects li b { color: var(--text); }
+
+  .warn-note {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+    border-top: 1px solid var(--border);
+    margin-top: 0.8rem;
+    padding-top: 0.7rem;
+  }
+
+  footer {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    font-family: -apple-system, sans-serif;
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ASTRA Engine</h1>
+  <p class="subtitle">Собственный расчётный астрологический движок (TypeScript, MIT). Ниже — живая демонстрация на условном примере карты: колесо интерактивно, можно переключать систему домов, наводить и кликать на планеты, включать и выключать аспекты.</p>
+  <div class="links">
+    <a href="https://github.com/starunovserhii/astra-engine">Код на GitHub</a>
+    <a href="https://github.com/starunovserhii/astra-engine#readme">README / архитектура</a>
+  </div>
+</header>
+
+<main>
+  <div class="chart-panel">
+    <div class="chart-toolbar">
+      <span id="chart-caption">—</span>
+      <span class="zoom-controls">
+        <button id="zoom-out" title="Уменьшить">−</button>
+        <button id="zoom-reset" title="Сбросить">⟲</button>
+        <button id="zoom-in" title="Увеличить">+</button>
+      </span>
+    </div>
+    <div id="chart-wrap">
+      <svg id="chart-svg" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </div>
+
+  <aside>
+    <div class="panel">
+      <h2>Настройки</h2>
+      <div class="control-row">
+        <span>Система домов</span>
+        <select id="house-system-select"></select>
+      </div>
+      <div class="control-row">
+        <span>Показывать аспекты</span>
+        <label class="switch">
+          <input type="checkbox" id="toggle-aspects" checked>
+          <span class="slider-track"></span>
+        </label>
+      </div>
+      <div class="control-row">
+        <span>Куспиды домов</span>
+        <label class="switch">
+          <input type="checkbox" id="toggle-houses" checked>
+          <span class="slider-track"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Insight Panel</h2>
+      <div id="insight-empty">Нажми на планету или точку на колесе — здесь появятся технические данные и список аспектов.</div>
+      <div id="insight-body">
+        <h3 id="insight-title">—</h3>
+        <p id="insight-sub">—</p>
+        <div class="fact-row"><span>Дом</span><b id="fact-house">—</b></div>
+        <div class="fact-row"><span>Ретроградность</span><b id="fact-retro">—</b></div>
+        <div class="fact-row"><span>Достоинство</span><b id="fact-dignity">—</b></div>
+        <ul id="insight-aspects"></ul>
+      </div>
+    </div>
+
+    <div class="panel">
+      <p class="warn-note">Пример условный (не реальные данные клиента) — демонстрирует расчёт, а не интерпретацию. Движок отдаёт только числа и их источник; текстовые толкования — задача отдельного AI-слоя поверх этого API (см. README, §«Архитектура»).</p>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  ASTRA Engine · MIT License · <a href="https://github.com/starunovserhii/astra-engine">github.com/starunovserhii/astra-engine</a>
+</footer>
+
+<script>
+const DATA = /*__ASTRA_DEMO_DATA__*/;
+
+const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
+// ︎ — селектор текстового (не эмодзи) начертания: без него некоторые
+// браузеры/шрифты рисуют знаки зодиака как цветные эмодзи-иконки поверх
+// колеса вместо аккуратных монохромных глифов (найдено при headless-проверке).
+const VS = '︎';
+const SIGN_GLYPH = { Aries:'♈'+VS, Taurus:'♉'+VS, Gemini:'♊'+VS, Cancer:'♋'+VS, Leo:'♌'+VS, Virgo:'♍'+VS, Libra:'♎'+VS, Scorpio:'♏'+VS, Sagittarius:'♐'+VS, Capricorn:'♑'+VS, Aquarius:'♒'+VS, Pisces:'♓'+VS };
+const SIGN_ELEMENT = { Aries:'fire', Leo:'fire', Sagittarius:'fire', Taurus:'earth', Virgo:'earth', Capricorn:'earth', Gemini:'air', Libra:'air', Aquarius:'air', Cancer:'water', Scorpio:'water', Pisces:'water' };
+const ELEMENT_COLOR = { fire: 'var(--fire)', earth: 'var(--earth)', air: 'var(--air)', water: 'var(--water)' };
+
+const PLANET_GLYPH = {
+  Sun:'☉', Moon:'☽', Mercury:'☿', Venus:'♀', Mars:'♂', Jupiter:'♃', Saturn:'♄',
+  Uranus:'♅', Neptune:'♆', Pluto:'♇', Chiron:'⚷',
+  MeanNode:'☊', TrueNode:'☊', MeanSouthNode:'☋', TrueSouthNode:'☋',
+  MeanLilith:'⚸', TrueLilith:'⚸', PartOfFortune:'⊕', Vertex:'Vx', AntiVertex:'AVx',
+};
+const HOUSE_SYSTEM_LABEL = {
+  placidus: 'Placidus', wholeSign: 'Целый знак (Whole Sign)', equal: 'Равнодомная (Equal)',
+  koch: 'Koch', regiomontanus: 'Regiomontanus', campanus: 'Campanus', porphyry: 'Porphyry', alcabitius: 'Alcabitius',
+};
+const DIGNITY_LABEL = { rulership: 'Обитель', exaltation: 'Экзальтация', detriment: 'Изгнание', fall: 'Падение' };
+const ASPECT_COLOR = {
+  conjunction: '#9a95a8', opposition: '#c9705a', square: '#c9705a',
+  trine: '#8fa9c0', sextile: '#8fa9c0',
+  semisextile: '#5c596a', semisquare: '#5c596a', sesquiquadrate: '#5c596a', quincunx: '#5c596a',
+};
+
+// Показываем в колесе только точки, для которых есть смысл рисовать (без AntiVertex — почти совпадает с Vertex)
+const HIDDEN_FROM_WHEEL = new Set(['AntiVertex']);
+
+const cx = 320, cy = 320;
+const R_ZODIAC_OUT = 300, R_ZODIAC_IN = 268;
+const R_HOUSE_NUM = 250;
+const R_CUSP_OUT = 268, R_CUSP_IN = 90;
+const R_PLANET = 205;
+const R_ASPECT = 175;
+
+let currentSystem = DATA.meta.houseSystemDefault;
+let selectedPoint = null;
+let showAspects = true;
+let showHouses = true;
+
+const svg = document.getElementById('chart-svg');
+const houseSelect = document.getElementById('house-system-select');
+const chartWrap = document.getElementById('chart-wrap');
+
+function normalize360(d) { let x = d % 360; if (x < 0) x += 360; return x; }
+
+function lonToScreenAngle(lon, ascLon) {
+  // Asc фиксирован слева (9 часов = 180°, стандартная математическая система координат).
+  // Долгота растёт против часовой стрелки — как в классическом колесе карты.
+  return normalize360(180 + (lon - ascLon));
+}
+
+function polar(r, screenAngleDeg) {
+  const rad = (screenAngleDeg * Math.PI) / 180;
+  return { x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) };
+}
+
+function svgEl(tag, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  return el;
+}
+
+function currentAsc() {
+  return DATA.housesBySystem[currentSystem].ascendant;
+}
+
+function planetPositions() {
+  const ascLon = currentAsc();
+  const visible = DATA.points.filter((p) => !HIDDEN_FROM_WHEEL.has(p.name));
+  const sorted = [...visible].sort((a, b) => a.longitude - b.longitude);
+  const placed = [];
+  const MIN_GAP_DEG = 6.5; // минимальный угловой зазор между соседними планетами на кольце, иначе рисуем на разных радиусах
+  sorted.forEach((p, i) => {
+    let ring = 0;
+    for (let j = placed.length - 1; j >= 0; j--) {
+      const prev = placed[j];
+      let diff = Math.abs(p.longitude - prev.longitude);
+      diff = Math.min(diff, 360 - diff);
+      if (diff < MIN_GAP_DEG && prev.ring === ring) { ring = ring === 0 ? 1 : 0; break; }
+    }
+    placed.push({ ...p, ring, ascLon });
+  });
+  return placed;
+}
+
+function render() {
+  svg.innerHTML = '';
+  const ascLon = currentAsc();
+  const houses = DATA.housesBySystem[currentSystem];
+  const pointHouses = DATA.pointHousesBySystem[currentSystem];
+
+  document.getElementById('chart-caption').textContent =
+    `Placidus и другие 7 систем доступны движку — сейчас показана: ${HOUSE_SYSTEM_LABEL[currentSystem]}${houses.reliable ? '' : ' (запасной расчёт, не полностью надёжна на этих координатах)'}`;
+
+  // Фон
+  svg.appendChild(svgEl('circle', { cx, cy, r: R_ZODIAC_OUT + 4, fill: '#131219' }));
+
+  // Зодиакальные клинья (12 знаков по 30°, от 0° Овна)
+  for (let i = 0; i < 12; i++) {
+    const signName = SIGNS[i];
+    const lonStart = i * 30, lonEnd = i * 30 + 30;
+    const aStart = lonToScreenAngle(lonStart, ascLon);
+    const aEnd = lonToScreenAngle(lonEnd, ascLon);
+    const pOutStart = polar(R_ZODIAC_OUT, aStart);
+    const pOutEnd = polar(R_ZODIAC_OUT, aEnd);
+    const pInStart = polar(R_ZODIAC_IN, aStart);
+    const pInEnd = polar(R_ZODIAC_IN, aEnd);
+    // клин рисуется "назад" по углу т.к. экранный угол убывает при росте долготы в эту сторону — используем sweep=0
+    const path = `M ${pOutStart.x} ${pOutStart.y} A ${R_ZODIAC_OUT} ${R_ZODIAC_OUT} 0 0 0 ${pOutEnd.x} ${pOutEnd.y} L ${pInEnd.x} ${pInEnd.y} A ${R_ZODIAC_IN} ${R_ZODIAC_IN} 0 0 1 ${pInStart.x} ${pInStart.y} Z`;
+    const el = svgEl('path', { d: path, class: 'zodiac-wedge', fill: ELEMENT_COLOR[SIGN_ELEMENT[signName]], 'fill-opacity': '0.16' });
+    svg.appendChild(el);
+    const mid = polar((R_ZODIAC_OUT + R_ZODIAC_IN) / 2, lonToScreenAngle(lonStart + 15, ascLon));
+    const label = svgEl('text', { x: mid.x, y: mid.y, class: 'sign-label' });
+    label.textContent = SIGN_GLYPH[signName];
+    svg.appendChild(label);
+  }
+  svg.appendChild(svgEl('circle', { cx, cy, r: R_ZODIAC_IN, fill: 'none', stroke: 'var(--border)', 'stroke-width': 1 }));
+
+  // Куспиды домов
+  if (showHouses) {
+    houses.cusps.forEach((cuspLon, i) => {
+      const isAngle = i === 0 || i === 3 || i === 6 || i === 9; // Asc/IC/Desc/MC
+      const a = lonToScreenAngle(cuspLon, ascLon);
+      const outer = polar(R_CUSP_OUT, a);
+      const inner = polar(R_CUSP_IN, a);
+      svg.appendChild(svgEl('line', { x1: inner.x, y1: inner.y, x2: outer.x, y2: outer.y, class: isAngle ? 'cusp-line angle' : 'cusp-line' }));
+
+      const nextLon = houses.cusps[(i + 1) % 12];
+      let span = nextLon - cuspLon; if (span <= 0) span += 360;
+      const numAngle = lonToScreenAngle(cuspLon + span / 2, ascLon);
+      const numPos = polar(R_HOUSE_NUM, numAngle);
+      const numLabel = svgEl('text', { x: numPos.x, y: numPos.y, class: 'house-num' });
+      numLabel.textContent = String(i + 1);
+      svg.appendChild(numLabel);
+    });
+  }
+
+  const placed = planetPositions();
+  const posByName = {};
+  placed.forEach((p) => {
+    const a = lonToScreenAngle(p.longitude, ascLon);
+    const r = R_PLANET - p.ring * 26;
+    posByName[p.name] = { ...polar(r, a), angle: a };
+  });
+
+  // Аспекты
+  if (showAspects) {
+    DATA.aspects.forEach((asp) => {
+      const pa = posByName[asp.a], pb = posByName[asp.b];
+      if (!pa || !pb) return;
+      const dim = selectedPoint && selectedPoint !== asp.a && selectedPoint !== asp.b;
+      const line = svgEl('line', {
+        x1: pa.x, y1: pa.y, x2: pb.x, y2: pb.y,
+        class: 'aspect-line' + (dim ? ' dim' : ''),
+        stroke: ASPECT_COLOR[asp.type] || '#5c596a',
+        'stroke-width': asp.type === 'conjunction' ? 0 : (asp.type === 'opposition' || asp.type === 'trine' || asp.type === 'square' || asp.type === 'sextile' ? 1.3 : 0.7),
+        'stroke-dasharray': (asp.type === 'square' || asp.type === 'opposition') ? 'none' : (['semisextile','semisquare','sesquiquadrate','quincunx'].includes(asp.type) ? '2,3' : 'none'),
+      });
+      svg.appendChild(line);
+    });
+  }
+
+  // Планеты
+  placed.forEach((p) => {
+    const pos = posByName[p.name];
+    const g = svgEl('g', { class: 'planet-dot', 'data-name': p.name });
+    g.appendChild(svgEl('circle', { cx: pos.x, cy: pos.y, r: 11, fill: '#1c1b24', stroke: 'var(--border)', 'stroke-width': 1 }));
+    const label = svgEl('text', { x: pos.x, y: pos.y + 5, 'text-anchor': 'middle', class: 'planet-label' + (selectedPoint === p.name ? ' selected' : '') });
+    label.textContent = PLANET_GLYPH[p.name] || p.name.slice(0, 2);
+    if ((PLANET_GLYPH[p.name] || '').length > 1) label.setAttribute('font-size', '9');
+    g.appendChild(label);
+    if (p.isRetrograde) {
+      const rTag = svgEl('text', { x: pos.x + 10, y: pos.y - 8, 'font-size': '8', fill: 'var(--fire)' });
+      rTag.textContent = 'R';
+      g.appendChild(rTag);
+    }
+    g.addEventListener('click', () => selectPoint(p.name));
+    svg.appendChild(g);
+  });
+
+  renderInsight(pointHouses);
+}
+
+function selectPoint(name) {
+  selectedPoint = selectedPoint === name ? null : name;
+  render();
+}
+
+function renderInsight(pointHouses) {
+  const empty = document.getElementById('insight-empty');
+  const body = document.getElementById('insight-body');
+  if (!selectedPoint) {
+    empty.style.display = 'block';
+    body.classList.remove('active');
+    return;
+  }
+  const p = DATA.points.find((x) => x.name === selectedPoint);
+  if (!p) return;
+  empty.style.display = 'none';
+  body.classList.add('active');
+  document.getElementById('insight-title').textContent = `${PLANET_GLYPH[p.name] || ''} ${p.name}`.trim();
+  document.getElementById('insight-sub').textContent = `${SIGN_GLYPH[p.sign]} ${p.sign} ${p.degreeInSign.toFixed(2)}°`;
+  document.getElementById('fact-house').textContent = pointHouses[p.name] ? `Дом ${pointHouses[p.name]}` : '—';
+  document.getElementById('fact-retro').textContent = p.isRetrograde ? 'Да (R)' : 'Нет';
+  document.getElementById('fact-dignity').textContent = DATA.dignities[p.name] ? DIGNITY_LABEL[DATA.dignities[p.name]] : '—';
+
+  const list = document.getElementById('insight-aspects');
+  list.innerHTML = '';
+  const related = DATA.aspects.filter((a) => a.a === p.name || a.b === p.name);
+  if (related.length === 0) {
+    const li = document.createElement('li');
+    li.textContent = 'Значимых аспектов не найдено.';
+    list.appendChild(li);
+  } else {
+    related.forEach((a) => {
+      const other = a.a === p.name ? a.b : a.a;
+      const li = document.createElement('li');
+      li.innerHTML = `<b>${PLANET_GLYPH[other] || other} ${other}</b> — ${a.type}, орб ${a.orb}° (${a.applying ? 'применяется' : 'расходится'})`;
+      list.appendChild(li);
+    });
+  }
+}
+
+// --- элементы управления ---
+Object.keys(DATA.housesBySystem).forEach((sys) => {
+  const opt = document.createElement('option');
+  opt.value = sys;
+  opt.textContent = HOUSE_SYSTEM_LABEL[sys] || sys;
+  if (sys === currentSystem) opt.selected = true;
+  houseSelect.appendChild(opt);
+});
+houseSelect.addEventListener('change', (e) => { currentSystem = e.target.value; render(); });
+
+document.getElementById('toggle-aspects').addEventListener('change', (e) => { showAspects = e.target.checked; render(); });
+document.getElementById('toggle-houses').addEventListener('change', (e) => { showHouses = e.target.checked; render(); });
+
+// --- zoom / pan (управление viewBox) ---
+let viewBox = { x: 0, y: 0, w: 640, h: 640 };
+function applyViewBox() { svg.setAttribute('viewBox', `${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`); }
+function zoomBy(factor, cxScreen, cyScreen) {
+  const rect = chartWrap.getBoundingClientRect();
+  const px = cxScreen !== undefined ? (cxScreen - rect.left) / rect.width : 0.5;
+  const py = cyScreen !== undefined ? (cyScreen - rect.top) / rect.height : 0.5;
+  const newW = Math.min(900, Math.max(150, viewBox.w * factor));
+  const newH = Math.min(900, Math.max(150, viewBox.h * factor));
+  viewBox.x += (viewBox.w - newW) * px;
+  viewBox.y += (viewBox.h - newH) * py;
+  viewBox.w = newW; viewBox.h = newH;
+  applyViewBox();
+}
+document.getElementById('zoom-in').addEventListener('click', () => zoomBy(0.85));
+document.getElementById('zoom-out').addEventListener('click', () => zoomBy(1.18));
+document.getElementById('zoom-reset').addEventListener('click', () => { viewBox = { x: 0, y: 0, w: 640, h: 640 }; applyViewBox(); });
+chartWrap.addEventListener('wheel', (e) => { e.preventDefault(); zoomBy(e.deltaY > 0 ? 1.1 : 0.9, e.clientX, e.clientY); }, { passive: false });
+
+// Разделяем "клик по планете" и "перетаскивание колеса": pointer capture
+// захватывается ТОЛЬКО когда движение превысило порог — иначе Chromium
+// перенаправляет синтетический click на chartWrap ещё при простом клике
+// (setPointerCapture на pointerdown "проглатывал" клики по планетам —
+// найдено и исправлено при headless-проверке страницы перед публикацией).
+const DRAG_THRESHOLD_PX = 4;
+let pointerDown = false, dragging = false, dragStart = null, viewStart = null, activePointerId = null;
+chartWrap.addEventListener('pointerdown', (e) => {
+  pointerDown = true; dragging = false; activePointerId = e.pointerId;
+  dragStart = { x: e.clientX, y: e.clientY }; viewStart = { ...viewBox };
+});
+chartWrap.addEventListener('pointermove', (e) => {
+  if (!pointerDown) return;
+  const movedPx = Math.hypot(e.clientX - dragStart.x, e.clientY - dragStart.y);
+  if (!dragging) {
+    if (movedPx < DRAG_THRESHOLD_PX) return;
+    dragging = true;
+    chartWrap.classList.add('dragging');
+    chartWrap.setPointerCapture(activePointerId);
+  }
+  const rect = chartWrap.getBoundingClientRect();
+  const dx = ((e.clientX - dragStart.x) / rect.width) * viewBox.w;
+  const dy = ((e.clientY - dragStart.y) / rect.height) * viewBox.h;
+  viewBox.x = viewStart.x - dx; viewBox.y = viewStart.y - dy;
+  applyViewBox();
+});
+['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) =>
+  chartWrap.addEventListener(ev, () => { pointerDown = false; dragging = false; chartWrap.classList.remove('dragging'); }));
+
+applyViewBox();
+render();
+</script>
+</body>
+</html>
