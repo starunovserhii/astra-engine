@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ASTRA Engine — интерактивная демонстрация</title>
 <meta name="description" content="ASTRA Engine — собственный расчётный астрологический движок (TypeScript, MIT). Интерактивная демонстрация: натальная карта, 8 систем домов, аспекты.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #0e0d12;
@@ -20,20 +23,64 @@
     --air: #8fa9c0;
     --water: #6d7fae;
     --line: #3a3846;
-    font-family: 'Georgia', 'Times New Roman', serif;
+    --bg-gradient-top: #201f28;
+    /* Само колесо карты намеренно остаётся "ночным небом" в обеих темах —
+       не переопределяются в html[data-theme="light"] ниже, поэтому текст и
+       глыфы планет/знаков внутри SVG-колеса всегда читаются на тёмном фоне
+       диска (см. R_ZODIAC_OUT-круг и .planet-dot circle в render()),
+       независимо от темы всей страницы вокруг него. */
+    --wheel-text: #ece7db;
+    --wheel-text-dim: #9a95a8;
+    --wheel-accent: #cdaa6e;
+    font-family: 'PT Serif', 'Georgia', 'Times New Roman', serif;
+  }
+  /* Light Mode — та же "Luxury Cosmic Minimalism" палитра, инвертированная в
+     тёплые кремовые/бумажные тона вместо глубокого тёмного фона. Все цвета
+     заведены через CSS-переменные, так что светлая тема не требует
+     дублирования ни одного другого правила ниже — только переопределение
+     значений. */
+  html[data-theme="light"] {
+    --bg: #f7f3ea;
+    --bg-panel: #ffffff;
+    --bg-panel-2: #f1ebdc;
+    --border: #ddd4bd;
+    --text: #262119;
+    --text-dim: #6e6555;
+    --accent: #9c6f2e;
+    --accent-dim: #c7a565;
+    --fire: #b1543c;
+    --earth: #5c7850;
+    --air: #4c6f90;
+    --water: #4c5a8c;
+    --line: #d6cbae;
+    --bg-gradient-top: #fffdf6;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    background: radial-gradient(ellipse at 50% -10%, #201f28 0%, var(--bg) 60%);
+    background: radial-gradient(ellipse at 50% -10%, var(--bg-gradient-top) 0%, var(--bg) 60%);
     color: var(--text);
-    font-family: 'Iowan Old Style', 'Georgia', serif;
+    font-family: 'PT Serif', 'Iowan Old Style', 'Georgia', serif;
     min-height: 100vh;
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
   header {
+    position: relative;
     padding: 2.5rem 2rem 1.5rem;
     text-align: center;
     border-bottom: 1px solid var(--border);
+  }
+  .theme-toggle-btn {
+    position: absolute; top: 1.4rem; right: 1.6rem;
+    display: flex; align-items: center; gap: 0.4rem;
+    background: var(--bg-panel); color: var(--text-dim);
+    border: 1px solid var(--border); border-radius: 20px;
+    padding: 0.4rem 0.85rem; font-size: 0.78rem; cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  .theme-toggle-btn:hover { border-color: var(--accent-dim); color: var(--text); }
+  @media (max-width: 640px) {
+    .theme-toggle-btn { position: static; margin: 1rem auto 0; }
   }
   header h1 {
     font-weight: 400;
@@ -115,16 +162,18 @@
   #chart-svg { width: 100%; height: 100%; display: block; }
 
   .planet-dot { cursor: pointer; }
-  .planet-dot:hover circle { stroke: var(--accent); stroke-width: 2; }
-  .planet-label { font-size: 13px; fill: var(--text); font-family: 'Segoe UI Symbol', 'Noto Sans Symbols', sans-serif; pointer-events: none; }
-  .planet-label.selected { fill: var(--accent); font-weight: bold; }
-  .sign-label { font-size: 15px; fill: var(--text-dim); text-anchor: middle; dominant-baseline: middle; font-family: 'Segoe UI Symbol', 'Noto Sans Symbols', sans-serif; }
+  .planet-dot:hover circle { stroke: var(--wheel-accent); stroke-width: 2; }
+  .planet-label { font-size: 13px; fill: var(--wheel-text); font-family: 'Segoe UI Symbol', 'Noto Sans Symbols', sans-serif; pointer-events: none; }
+  .planet-label.selected { fill: var(--wheel-accent); font-weight: bold; }
+  .sign-label { font-size: 15px; fill: var(--wheel-text-dim); text-anchor: middle; dominant-baseline: middle; font-family: 'Segoe UI Symbol', 'Noto Sans Symbols', sans-serif; }
   .cusp-line { stroke: var(--line); stroke-width: 1; }
   .cusp-line.angle { stroke: var(--accent-dim); stroke-width: 1.4; }
-  .house-num { font-size: 10px; fill: var(--text-dim); font-family: -apple-system, sans-serif; text-anchor: middle; }
+  .house-num { font-size: 10px; fill: var(--wheel-text-dim); font-family: -apple-system, sans-serif; text-anchor: middle; }
   .zodiac-wedge { stroke: var(--border); stroke-width: 0.5; }
-  .aspect-line { fill: none; opacity: 0.55; }
-  .aspect-line.dim { opacity: 0.12; }
+  /* прозрачность и толщина линии аспекта теперь считаются в JS по точности
+     орба (см. render()) и передаются через inline style — здесь только
+     общий сброс заливки */
+  .aspect-line { fill: none; }
 
   aside {
     display: flex;
@@ -139,7 +188,7 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
   .panel h2 {
-    font-family: Georgia, serif;
+    font-family: 'PT Serif', Georgia, serif;
     font-size: 0.95rem;
     font-weight: 400;
     letter-spacing: 0.03em;
@@ -240,7 +289,7 @@
     background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px;
     padding: 1.6rem 1.8rem; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
-  .interp-panel h2 { font-family: Georgia, serif; color: var(--accent); font-size: 1.35rem; margin: 0 0 0.4rem; }
+  .interp-panel h2 { font-family: 'PT Serif', Georgia, serif; color: var(--accent); font-size: 1.35rem; margin: 0 0 0.4rem; }
   .interp-intro { color: var(--text-dim); font-size: 0.85rem; line-height: 1.6; margin: 0 0 1.3rem; max-width: 68ch; }
   .interp-toolbar { display: flex; gap: 0.7rem; align-items: center; margin-bottom: 1.3rem; flex-wrap: wrap; }
   .interp-btn {
@@ -257,10 +306,18 @@
   #interp-body.active { display: block; }
   .interp-block { border-top: 1px solid var(--border); padding-top: 1.15rem; margin-top: 1.15rem; }
   .interp-block:first-child { border-top: none; padding-top: 0; margin-top: 0; }
-  .interp-block h3 { font-family: Georgia, serif; font-size: 1.08rem; color: var(--text); margin: 0 0 0.35rem; }
+  .interp-block h3 { font-family: 'PT Serif', Georgia, serif; font-size: 1.08rem; color: var(--text); margin: 0 0 0.35rem; }
   .interp-basis { font-size: 0.72rem; color: var(--text-dim); font-style: italic; margin: 0 0 0.65rem; line-height: 1.4; }
   .interp-block p { font-size: 0.92rem; line-height: 1.68; margin: 0 0 0.75rem; max-width: 74ch; }
   .interp-block p:last-child { margin-bottom: 0; }
+  .interp-block p.wheel-highlight {
+    animation: wheelHighlightFade 2.4s ease-out;
+    border-radius: 4px;
+  }
+  @keyframes wheelHighlightFade {
+    0% { background: rgba(205, 170, 110, 0.28); box-shadow: 0 0 0 6px rgba(205, 170, 110, 0.28); }
+    100% { background: transparent; box-shadow: 0 0 0 6px rgba(205, 170, 110, 0); }
+  }
   .interp-aspect-list, .interp-house-list { margin: 0; padding-left: 1.15rem; font-size: 0.88rem; line-height: 1.6; }
   .interp-aspect-list li, .interp-house-list li { margin-bottom: 0.55rem; }
   .interp-aspect-list li:last-child, .interp-house-list li:last-child { margin-bottom: 0; }
@@ -288,13 +345,31 @@
   .transit-item { border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem; }
   .transit-item:first-child { border-top: none; padding-top: 0; margin-top: 0; }
   .transit-item-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.35rem; }
-  .transit-item-head b { font-family: Georgia, serif; font-size: 1rem; color: var(--text); font-weight: 600; }
+  .transit-item-head b { font-family: 'PT Serif', Georgia, serif; font-size: 1rem; color: var(--text); font-weight: 600; }
   .transit-orb { font-size: 0.74rem; color: var(--accent); white-space: nowrap; }
   .transit-item p { font-size: 0.9rem; line-height: 1.65; margin: 0; max-width: 74ch; }
   .transit-empty { color: var(--text-dim); font-size: 0.88rem; }
   .transit-time-note { font-size: 0.74rem; color: var(--text-dim); font-style: italic; margin: 0 0 1.2rem; }
+  .synastry-form-grid { display: flex; flex-wrap: wrap; gap: 0 1.4rem; margin-bottom: 0.3rem; }
+  .synastry-form-grid .form-row { flex: 1 1 200px; }
+  .synastry-manual-grid { display: flex; flex-wrap: wrap; gap: 0 1.4rem; margin: 0.2rem 0 0.9rem; }
+  .synastry-manual-grid .form-row { flex: 1 1 160px; }
+  .synastry-subhead { font-family: 'PT Serif', Georgia, serif; font-size: 1.05rem; color: var(--text); margin: 1.6rem 0 0.75rem; }
+  .synastry-subhead:first-child { margin-top: 0; }
+  .synastry-overlay-cols { display: flex; flex-wrap: wrap; gap: 1.6rem; margin-bottom: 0.4rem; }
+  .synastry-overlay-col { flex: 1 1 260px; min-width: 220px; }
+  .synastry-overlay-col h4 { font-size: 0.8rem; color: var(--text-dim); margin: 0 0 0.5rem; font-weight: 600; }
+  .synastry-overlay-list { list-style: none; margin: 0; padding: 0; font-size: 0.86rem; line-height: 1.7; }
+  .synastry-overlay-list li { display: flex; justify-content: space-between; gap: 0.6rem; border-bottom: 1px dashed var(--border); padding: 0.25rem 0; }
   #transit-body { display: none; }
   #transit-body.active { display: block; }
+
+  /* --- «Что важнее всего в этой карте» (топ-саммари внутри расшифровки) --- */
+  .insight-top-list { display: flex; flex-direction: column; gap: 0.85rem; }
+  .insight-top-item { padding-left: 0.9rem; border-left: 2px solid var(--accent-dim); }
+  .insight-top-item p { margin: 0 !important; }
+  .insight-orb { color: var(--accent); font-size: 0.78rem; font-weight: 400; }
+  .insight-top-note { font-size: 0.76rem; color: var(--text-dim); font-style: italic; margin: 0.6rem 0 0 !important; }
 </style>
 </head>
 <body>
@@ -306,6 +381,9 @@
     <a href="https://github.com/starunovserhii/astra-engine">Код на GitHub</a>
     <a href="https://github.com/starunovserhii/astra-engine#readme">README / архитектура</a>
   </div>
+  <button id="theme-toggle" class="theme-toggle-btn" type="button" title="Переключить тему">
+    <span id="theme-toggle-icon">☾</span> <span id="theme-toggle-label">Тёмная тема</span>
+  </button>
 </header>
 
 <main>
@@ -426,6 +504,92 @@
 
 <section class="interp-section">
   <div class="interp-panel">
+    <h2>Прогрессии</h2>
+    <p class="interp-intro">Вторичные прогрессии — техника «день за год»: положение планет через N дней после рождения показывает символическое развитие карты за N лет жизни. Прогрессированные планеты движутся медленно (Луна — быстрее всех, около градуса в месяц), поэтому их аспекты к натальным точкам держатся месяцами и годами — это карта долгих внутренних сдвигов, а не сиюминутных событий.</p>
+    <div class="interp-toolbar">
+      <div class="form-row transit-toolbar-date">
+        <label for="progression-date">Дата (возраст на неё)</label>
+        <input type="date" id="progression-date">
+      </div>
+      <button id="progression-generate-btn" class="interp-btn" type="button">Показать прогрессии</button>
+      <span id="progression-status" class="interp-status"></span>
+    </div>
+    <div id="progression-body"></div>
+    <p class="interp-disclaimer">Прогрессии — символическая, а не буквальная техника (день после рождения ≠ реальный транзит того дня): её ценность в самой пропорции «день за год», проверенной столетиями практики, а не в астрономическом совпадении. Как и другие разделы, это инструмент для размышления, не предсказание.</p>
+  </div>
+</section>
+
+<section class="interp-section">
+  <div class="interp-panel">
+    <h2>Solar Return (соляр)</h2>
+    <p class="interp-intro">Карта на точный момент, когда транзитное Солнце возвращается к твоей натальной долготе, — раз в год, около дня рождения. Показывает главные темы предстоящего годового цикла: где именно смещается акцент, пока натальная карта остаётся неизменной основой.</p>
+    <div class="interp-toolbar">
+      <div class="form-row transit-toolbar-date" style="min-width:7rem;">
+        <label for="solar-return-year">Год</label>
+        <input type="number" id="solar-return-year" min="1900" max="2100" step="1">
+      </div>
+      <button id="solar-return-generate-btn" class="interp-btn" type="button">Построить соляр</button>
+      <span id="solar-return-status" class="interp-status"></span>
+    </div>
+    <div id="solar-return-body"></div>
+    <p class="interp-disclaimer">Соляр здесь всегда строится на место рождения (классический вариант метода) — часть астрологов вместо этого используют текущее место проживания на момент дня рождения, но это отдельная настройка, которую эта версия не поддерживает. Как и другие разделы, это инструмент для размышления о годовом цикле, а не предсказание конкретных событий.</p>
+  </div>
+</section>
+
+<section class="interp-section">
+  <div class="interp-panel">
+    <h2>Синастрия</h2>
+    <p class="interp-intro">Совместимость двух карт: аспекты между твоими планетами и планетами второго человека, наложение домов (в какие сферы жизни друг друга вы попадаете) и композитная карта — символическая «карта самих отношений», построенная по средним точкам между вашими планетами и куспидами домов.</p>
+    <div class="synastry-form-grid">
+      <div class="form-row">
+        <label for="synastry-b-name">Имя второго человека</label>
+        <input type="text" id="synastry-b-name" placeholder="Партнёр" value="Партнёр">
+      </div>
+      <div class="form-row">
+        <label for="synastry-b-date">Дата рождения</label>
+        <input type="date" id="synastry-b-date" value="1992-03-21">
+      </div>
+      <div class="form-row">
+        <label for="synastry-b-time">Время рождения (местное)</label>
+        <input type="time" id="synastry-b-time" value="14:00">
+      </div>
+      <div class="form-row form-check">
+        <label><input type="checkbox" id="synastry-b-time-unknown"> Точное время неизвестно</label>
+      </div>
+      <div class="form-row">
+        <label for="synastry-b-city">Город рождения</label>
+        <input type="text" id="synastry-b-city" list="city-list" placeholder="Начни вводить название…" value="Киев">
+        <p id="synastry-b-city-coords" class="city-coords"></p>
+      </div>
+      <div class="form-row form-check">
+        <label><input type="checkbox" id="synastry-b-manual-toggle"> Не нашли город — указать вручную</label>
+      </div>
+    </div>
+    <div id="synastry-b-manual-fields" class="synastry-manual-grid" style="display:none;">
+      <div class="form-row">
+        <label for="synastry-b-manual-lat">Широта (юг — отрицательные)</label>
+        <input type="number" id="synastry-b-manual-lat" step="0.0001" placeholder="напр. 55.7558">
+      </div>
+      <div class="form-row">
+        <label for="synastry-b-manual-lon">Долгота (запад — отрицательные)</label>
+        <input type="number" id="synastry-b-manual-lon" step="0.0001" placeholder="напр. 37.6173">
+      </div>
+      <div class="form-row">
+        <label for="synastry-b-manual-tz">Часовой пояс</label>
+        <select id="synastry-b-manual-tz"></select>
+      </div>
+    </div>
+    <div class="interp-toolbar">
+      <button id="synastry-generate-btn" class="interp-btn" type="button">Построить синастрию</button>
+      <span id="synastry-status" class="interp-status"></span>
+    </div>
+    <div id="synastry-body"></div>
+    <p class="interp-disclaimer">Синастрия и композитная карта — инструменты для размышления об отношениях, а не диагноз совместимости и не предсказание их будущего: любые аспекты (даже «напряжённые») проживаются через выбор и осознанность обоих людей, а не автоматически. Данные второго человека нигде не сохраняются — расчёт происходит прямо в этой странице и обнуляется при перезагрузке.</p>
+  </div>
+</section>
+
+<section class="interp-section">
+  <div class="interp-panel">
     <h2>Глубокая расшифровка</h2>
     <p class="interp-intro">Текстовый интерпретационный слой поверх точных данных карты выше: правило-ориентированный движок (без AI и без сервера — работает прямо в этой странице), который собирает связный разбор из положения планет по знакам и домам, достоинств и аспектов. У каждого раздела указано основание — конкретные элементы карты, на которых он построен.</p>
     <div class="interp-toolbar">
@@ -445,6 +609,38 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.2.1/jspdf.umd.min.js"></script>
 <script src="astra-engine.bundle.js"></script>
 <script>
+// --- переключатель Light Mode / Dark Mode --- сделан первым делом в
+// скрипте, чтобы применить сохранённый выбор темы до того, как страница
+// станет видимой глазу (без "мигания" неверной темой при загрузке).
+// Тема хранится в localStorage — это обычный сайт (не встроенный в чат
+// артефакт), поэтому постоянное хранение здесь уместно и ожидаемо.
+(function initTheme() {
+  let saved = null;
+  try { saved = localStorage.getItem('astra-theme'); } catch (e) { /* приватный режим браузера — просто не запоминаем выбор */ }
+  if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+})();
+
+function applyThemeToggleLabel() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const icon = document.getElementById('theme-toggle-icon');
+  const label = document.getElementById('theme-toggle-label');
+  if (icon) icon.textContent = isLight ? '☼' : '☾';
+  if (label) label.textContent = isLight ? 'Светлая тема' : 'Тёмная тема';
+}
+document.addEventListener('DOMContentLoaded', applyThemeToggleLabel);
+if (document.readyState !== 'loading') applyThemeToggleLabel();
+
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  if (isLight) {
+    document.documentElement.removeAttribute('data-theme');
+  } else {
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+  try { localStorage.setItem('astra-theme', isLight ? 'dark' : 'light'); } catch (e) { /* приватный режим — переключение всё равно работает в рамках вкладки */ }
+  applyThemeToggleLabel();
+});
+
 let DATA = /*__ASTRA_DEMO_DATA__*/;
 
 // Момент и место рождения ТЕКУЩЕЙ карты — хранятся отдельно от DATA (которая
@@ -704,6 +900,86 @@ function basisLine(...parts) {
   return 'На основе: ' + parts.filter(Boolean).join(', ') + '.';
 }
 
+// --- "Объясни мою карту" (§38 брифа): ранжированный саммари самых заметных
+// конфигураций карты — не полный разбор (он и так есть в разделах ниже), а
+// вход в чтение: с чего начать смотреть. Скор: тип аспекта (мажорный весит
+// больше минорного) × точность орба (относительно натального допуска для
+// этой пары) + бонус за участие светил (Солнце/Луна) и личных планет +
+// то же для достоинств планет (обитель/экзальтация выше изгнания/падения).
+const TOP_INSIGHT_ASPECT_BASE_ORB = { conjunction: 8, opposition: 8, square: 7, trine: 7, sextile: 5, semisextile: 2, semisquare: 2, sesquiquadrate: 2, quincunx: 3 };
+const TOP_INSIGHT_ASPECT_WEIGHT = { conjunction: 1.0, opposition: 0.95, square: 0.9, trine: 0.8, sextile: 0.7, quincunx: 0.4, semisextile: 0.3, semisquare: 0.3, sesquiquadrate: 0.3 };
+const TOP_INSIGHT_PERSONAL = new Set(['Mercury', 'Venus', 'Mars']);
+// Северный/Южный узел и Вертекс/Антивертекс — по построению ВСЕГДА ровно в
+// оппозиции (Южный узел = Северный + 180°, Антивертекс = Вертекс + 180°) —
+// это не настоящий аспект карты, а тавтология геометрии самих точек. Без
+// этого фильтра такие "аспекты" с орбом 0° постоянно занимают верхние места
+// в любом ранжировании по точности орба, вытесняя реальную информацию.
+const TAUTOLOGICAL_PAIRS = new Set(['MeanNode|MeanSouthNode', 'TrueNode|TrueSouthNode', 'Vertex|AntiVertex']);
+function isTautologicalPair(a, b) {
+  return TAUTOLOGICAL_PAIRS.has(a + '|' + b) || TAUTOLOGICAL_PAIRS.has(b + '|' + a);
+}
+
+function buildTopInsights(data) {
+  const byName = {};
+  data.points.forEach((p) => { byName[p.name] = p; });
+  const candidates = [];
+
+  data.aspects.forEach((a) => {
+    if (isTautologicalPair(a.a, a.b)) return;
+    const luminary = a.a === 'Sun' || a.b === 'Sun' || a.a === 'Moon' || a.b === 'Moon';
+    const maxOrb = (TOP_INSIGHT_ASPECT_BASE_ORB[a.type] || 5) + (luminary ? 2 : 0);
+    const tightness = Math.max(0, Math.min(1, 1 - a.orb / maxOrb));
+    const typeW = TOP_INSIGHT_ASPECT_WEIGHT[a.type] ?? 0.2;
+    // Возводим точность орба в степень >1 — иначе аспект почти на самой
+    // границе допустимого орба (т.е. едва заметный) всё равно набирает
+    // достаточно очков за счёт бонусов ниже и обгоняет по-настоящему точные
+    // аспекты. Бонусы ниже — это тай-брейкеры между сопоставимо точными
+    // аспектами, а не способ вытащить откровенно широкий орб в топ.
+    let score = typeW * Math.pow(tightness, 1.6);
+    if (luminary) score += 0.15;
+    if (TOP_INSIGHT_PERSONAL.has(a.a) || TOP_INSIGHT_PERSONAL.has(a.b)) score += 0.06;
+    const dignA = data.dignities[a.a], dignB = data.dignities[a.b];
+    if (['rulership', 'exaltation'].includes(dignA) || ['rulership', 'exaltation'].includes(dignB)) score += 0.05;
+    const nameA = PLANET_NAME_RU[a.a] || a.a, nameB = PLANET_NAME_RU[a.b] || a.b;
+    const frame = ASPECT_FRAME[a.type];
+    const text = frame ? frame.text(nameA, nameB) : `${nameA} и ${nameB} образуют ${ASPECT_NAME_RU[a.type] || a.type}.`;
+    candidates.push({
+      score,
+      html: `<p><b>${nameA} ${ASPECT_NAME_RU[a.type] || a.type} ${nameB}</b> <span class="insight-orb">(орб ${a.orb}°)</span> — ${text}</p>`,
+    });
+  });
+
+  ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto'].forEach((name) => {
+    const dignity = data.dignities[name];
+    const p = byName[name];
+    if (!dignity || !p) return;
+    const nameRu = PLANET_NAME_RU[name] || name;
+    const signRu = SIGN_NAME_RU[p.sign];
+    let score = dignity === 'rulership' ? 0.65 : dignity === 'exaltation' ? 0.55 : dignity === 'detriment' ? 0.32 : 0.28;
+    if (name === 'Sun' || name === 'Moon') score += 0.18;
+    else if (TOP_INSIGHT_PERSONAL.has(name)) score += 0.07;
+    const strong = dignity === 'rulership' || dignity === 'exaltation';
+    const text = strong
+      ? 'Одна из самых сильных точек этой карты — тема раскрывается почти без внутреннего сопротивления.'
+      : 'Тема, которая не даётся по умолчанию — но именно сознательная работа с ней обычно даёт больше всего личностного роста.';
+    candidates.push({
+      score,
+      html: `<p><b>${nameRu} в ${signRu}</b> <span class="insight-orb">(${DIGNITY_LABEL[dignity]})</span> — ${text}</p>`,
+    });
+  });
+
+  candidates.sort((a, b) => b.score - a.score);
+  const top = candidates.slice(0, 5);
+  if (!top.length) return null;
+
+  return {
+    title: 'Что важнее всего в этой карте',
+    basis: 'На основе: автоматическое ранжирование по точности орба, типу аспекта, участию светил (Солнце/Луна) и силе достоинства планеты — подробный разбор каждого пункта см. в разделах ниже.',
+    html: '<div class="insight-top-list">' + top.map((c) => `<div class="insight-top-item">${c.html}</div>`).join('') + '</div>' +
+      '<p class="insight-top-note">Это автоматический выбор самых заметных конфигураций карты — не единственно важное, а то, с чего имеет смысл начать чтение.</p>',
+  };
+}
+
 // Собирает объект {title, basis, html} для каждого раздела расшифровки.
 // pointHouses — DATA.pointHousesBySystem[currentSystem]; houses — DATA.housesBySystem[currentSystem]
 function buildInterpretation(data, pointHouses, houses) {
@@ -736,8 +1012,8 @@ function buildInterpretation(data, pointHouses, houses) {
         `Луна в ${SIGN_NAME_RU[moon.sign]}${houseBasis(houseOf('Moon'))}`,
         ascSign ? `Асцендент в ${SIGN_NAME_RU[ascSign]}` : null
       ),
-      html: `<p>${describePlanet('Sun', sun.sign, houseOf('Sun'), dignityOf('Sun'), sun.isRetrograde)}</p>` +
-            `<p>${describePlanet('Moon', moon.sign, houseOf('Moon'), dignityOf('Moon'), moon.isRetrograde)}</p>` +
+      html: `<p id="interp-planet-Sun">${describePlanet('Sun', sun.sign, houseOf('Sun'), dignityOf('Sun'), sun.isRetrograde)}</p>` +
+            `<p id="interp-planet-Moon">${describePlanet('Moon', moon.sign, houseOf('Moon'), dignityOf('Moon'), moon.isRetrograde)}</p>` +
             `<p>${ascText}</p>`,
     });
   }
@@ -748,7 +1024,7 @@ function buildInterpretation(data, pointHouses, houses) {
     sections.push({
       title: 'Мышление и стиль общения',
       basis: basisLine(`Меркурий в ${SIGN_NAME_RU[merc.sign]}${houseBasis(houseOf('Mercury'))}`),
-      html: `<p>${describePlanet('Mercury', merc.sign, houseOf('Mercury'), dignityOf('Mercury'), merc.isRetrograde)}</p>`,
+      html: `<p id="interp-planet-Mercury">${describePlanet('Mercury', merc.sign, houseOf('Mercury'), dignityOf('Mercury'), merc.isRetrograde)}</p>`,
     });
   }
 
@@ -758,8 +1034,8 @@ function buildInterpretation(data, pointHouses, houses) {
   const venus = get('Venus'), mars = get('Mars');
   if (venus || mars) {
     let html = '';
-    if (venus) html += `<p>${describePlanet('Venus', venus.sign, houseOf('Venus'), dignityOf('Venus'), venus.isRetrograde)}</p>`;
-    if (mars) html += `<p>${describePlanet('Mars', mars.sign, houseOf('Mars'), dignityOf('Mars'), mars.isRetrograde)}</p>`;
+    if (venus) html += `<p id="interp-planet-Venus">${describePlanet('Venus', venus.sign, houseOf('Venus'), dignityOf('Venus'), venus.isRetrograde)}</p>`;
+    if (mars) html += `<p id="interp-planet-Mars">${describePlanet('Mars', mars.sign, houseOf('Mars'), dignityOf('Mars'), mars.isRetrograde)}</p>`;
     const seventhHouse = timeKnown ? '<p>' + `7-й дом (${HOUSE_THEME[7].title}) показывает, каким партнёрство видится на уровне жизненной темы — ${HOUSE_THEME[7].text}. Планеты в этом доме и его управитель добавляют красок к тому, что уже видно по Венере и Марсу — их можно рассмотреть отдельно на колесе выше.` + '</p>' : '';
     sections.push({
       title: 'Отношения и любовь',
@@ -774,7 +1050,7 @@ function buildInterpretation(data, pointHouses, houses) {
     const mc = lonToSignDeg(houses.midheaven);
     const mcS = ZODIAC_TRAITS[mc.sign];
     let html = `<p>Середина неба (MC) в ${SIGN_NAME_RU[mc.sign]} — вершина карты, показывающая профессиональный путь и то, каким тебя видит общество со стороны. Здесь это связано с ${mcS.core}, а естественный ресурс на этом пути — ${mcS.strength}.</p>`;
-    if (saturn) html += `<p>${describePlanet('Saturn', saturn.sign, houseOf('Saturn'), dignityOf('Saturn'), saturn.isRetrograde)}</p>`;
+    if (saturn) html += `<p id="interp-planet-Saturn">${describePlanet('Saturn', saturn.sign, houseOf('Saturn'), dignityOf('Saturn'), saturn.isRetrograde)}</p>`;
     sections.push({
       title: 'Карьера и предназначение',
       basis: basisLine(`MC в ${SIGN_NAME_RU[mc.sign]}`, saturn ? `Сатурн в ${SIGN_NAME_RU[saturn.sign]}${houseBasis(houseOf('Saturn'))}` : null),
@@ -784,7 +1060,7 @@ function buildInterpretation(data, pointHouses, houses) {
     sections.push({
       title: 'Карьера и предназначение',
       basis: basisLine(`Сатурн в ${SIGN_NAME_RU[saturn.sign]}`),
-      html: `<p>${describePlanet('Saturn', saturn.sign, null, dignityOf('Saturn'), saturn.isRetrograde)}</p><p>Без точного времени рождения MC и 10-й дом не рассчитаны — эта часть карты завязана на время суток.</p>`,
+      html: `<p id="interp-planet-Saturn">${describePlanet('Saturn', saturn.sign, null, dignityOf('Saturn'), saturn.isRetrograde)}</p><p>Без точного времени рождения MC и 10-й дом не рассчитаны — эта часть карты завязана на время суток.</p>`,
     });
   }
 
@@ -793,7 +1069,7 @@ function buildInterpretation(data, pointHouses, houses) {
   {
     let html = '';
     if (venus) html += `<p>Венера, помимо отношений, отвечает и за то, что приносит ощущение ценности и удовольствия от обладания — включая деньги и вещи.</p>`;
-    if (jupiter) html += `<p>${describePlanet('Jupiter', jupiter.sign, houseOf('Jupiter'), dignityOf('Jupiter'), jupiter.isRetrograde)}</p>`;
+    if (jupiter) html += `<p id="interp-planet-Jupiter">${describePlanet('Jupiter', jupiter.sign, houseOf('Jupiter'), dignityOf('Jupiter'), jupiter.isRetrograde)}</p>`;
     if (timeKnown) html += `<p>2-й дом (${HOUSE_THEME[2].title}) — ${HOUSE_THEME[2].text}. Посмотри, какие планеты в него попадают на колесе: они прямо описывают твой стиль обращения с ресурсами.</p>`;
     if (html) {
       sections.push({
@@ -847,8 +1123,12 @@ function buildInterpretation(data, pointHouses, houses) {
   }
 
   // --- 9. Ключевые аспекты (полный список, отсортированный по орбу — точнее орб, сильнее аспект) ---
-  if (data.aspects.length) {
-    const sorted = [...data.aspects].sort((a, b) => a.orb - b.orb).slice(0, 8);
+  // Тавтологичные пары (Узел/Южный узел, Вертекс/Антивертекс — см.
+  // isTautologicalPair) исключены: они всегда ровно в оппозиции по
+  // построению и без фильтра постоянно вытесняли бы настоящие аспекты.
+  const meaningfulAspects = data.aspects.filter((a) => !isTautologicalPair(a.a, a.b));
+  if (meaningfulAspects.length) {
+    const sorted = [...meaningfulAspects].sort((a, b) => a.orb - b.orb).slice(0, 8);
     const items = sorted.map((a) => {
       const frame = ASPECT_FRAME[a.type];
       const nameA = PLANET_NAME_RU[a.a] || a.a, nameB = PLANET_NAME_RU[a.b] || a.b;
@@ -876,6 +1156,9 @@ function buildInterpretation(data, pointHouses, houses) {
       html: `<ul class="interp-house-list">${rows.join('')}</ul>`,
     });
   }
+
+  const topInsights = buildTopInsights(data);
+  if (topInsights) sections.unshift(topInsights);
 
   return sections;
 }
@@ -9603,17 +9886,27 @@ function render() {
     posByName[p.name] = { ...polar(r, a), angle: a };
   });
 
-  // Аспекты
+  // Аспекты. Толщина и прозрачность линии отражают точность орба (насколько
+  // аспект близок к "точному" относительно допустимого для этого типа) —
+  // это даёт визуальную иерархию значимости прямо на колесе, а не только в
+  // текстовых разделах ниже: аспект "почти в точку" виден отчётливо, аспект
+  // на самой границе допустимого орба — едва заметной тонкой линией.
   if (showAspects) {
     DATA.aspects.forEach((asp) => {
       const pa = posByName[asp.a], pb = posByName[asp.b];
       if (!pa || !pb) return;
       const dim = selectedPoint && selectedPoint !== asp.a && selectedPoint !== asp.b;
+      const baseWidth = asp.type === 'conjunction' ? 0 : (asp.type === 'opposition' || asp.type === 'trine' || asp.type === 'square' || asp.type === 'sextile' ? 1.3 : 0.7);
+      const maxOrb = TOP_INSIGHT_ASPECT_BASE_ORB[asp.type] || 5;
+      const tightness = Math.max(0, Math.min(1, 1 - asp.orb / maxOrb));
+      const opacity = (0.16 + 0.62 * tightness) * (dim ? 0.2 : 1);
+      const width = baseWidth * (0.55 + 0.75 * tightness);
       const line = svgEl('line', {
         x1: pa.x, y1: pa.y, x2: pb.x, y2: pb.y,
-        class: 'aspect-line' + (dim ? ' dim' : ''),
+        class: 'aspect-line',
         stroke: ASPECT_COLOR[asp.type] || '#5c596a',
-        'stroke-width': asp.type === 'conjunction' ? 0 : (asp.type === 'opposition' || asp.type === 'trine' || asp.type === 'square' || asp.type === 'sextile' ? 1.3 : 0.7),
+        'stroke-width': width,
+        style: `opacity:${opacity.toFixed(2)}`,
         'stroke-dasharray': (asp.type === 'square' || asp.type === 'opposition') ? 'none' : (['semisextile','semisquare','sesquiquadrate','quincunx'].includes(asp.type) ? '2,3' : 'none'),
       });
       svg.appendChild(line);
@@ -9642,8 +9935,27 @@ function render() {
 }
 
 function selectPoint(name) {
-  selectedPoint = selectedPoint === name ? null : name;
+  const wasSelected = selectedPoint === name;
+  selectedPoint = wasSelected ? null : name;
   render();
+  if (!wasSelected && selectedPoint) scrollToInterpretationParagraph(selectedPoint);
+}
+
+// Клик по планете на колесе — если «Глубокая расшифровка» уже сформирована
+// и для этой точки есть отдельный абзац (Sun/Moon/Mercury/Venus/Mars/
+// Jupiter/Saturn — точки, вокруг которых в расшифровке есть выделенный
+// текст), плавно прокручиваем к нему и на пару секунд подсвечиваем: это
+// связывает интерактивное колесо и текстовый разбор в один интерфейс,
+// вместо двух разрозненных. Для точек без отдельного абзаца (Уран и
+// далее, узлы, Лилит и т.п.) просто ничего не делаем — Insight Panel справа
+// уже показывает всё, что для них есть.
+function scrollToInterpretationParagraph(name) {
+  const el = document.getElementById('interp-planet-' + name);
+  if (!el || !interpBodyEl.classList.contains('active')) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  el.classList.remove('wheel-highlight');
+  void el.offsetWidth; // форсируем reflow, чтобы анимация подсветки перезапустилась и при повторном клике
+  el.classList.add('wheel-highlight');
 }
 
 function renderInsight(pointHouses) {
@@ -9918,6 +10230,9 @@ document.getElementById('calc-btn').addEventListener('click', () => {
     setCalcStatus('Карта построена.', 'ok');
     resetInterpretation(); // новая карта — старая расшифровка больше не актуальна
     resetTransits(); // и транзиты относительно старой карты тоже устарели
+    resetProgressions(); // и прогрессии тоже — они тоже считаются от даты рождения
+    resetSolarReturn(); // и соляр — он тоже считается от натальной долготы Солнца
+    resetSynastry(); // и синастрия/композит — они тоже строятся от карты A
   } catch (err) {
     console.error(err);
     setCalcStatus('Не удалось посчитать карту: ' + (err && err.message ? err.message : String(err)), 'error');
@@ -10017,6 +10332,9 @@ interpGenerateBtn.addEventListener('click', renderInterpretation);
 // построена') в обработчике calc-btn выше.
 houseSelect.addEventListener('change', resetInterpretation);
 houseSelect.addEventListener('change', resetTransits); // дом транзитной планеты тоже зависит от системы домов
+houseSelect.addEventListener('change', resetProgressions); // и прогрессированный дом тоже
+houseSelect.addEventListener('change', resetSolarReturn); // и дом внутри соляра тоже
+houseSelect.addEventListener('change', resetSynastry); // и дома в синастрии/композите тоже
 
 // --- растеризация SVG-колеса в PNG (для встраивания картинки в PDF) ---
 // Инлайним вычисленные стили в клон, т.к. классы из внешнего <style> не
@@ -10241,7 +10559,11 @@ const RU_GENDER = {
   MeanNode: 'm', TrueNode: 'm', MeanSouthNode: 'm', TrueSouthNode: 'm',
   MeanLilith: 'f', TrueLilith: 'f', PartOfFortune: 'm', Vertex: 'm', AntiVertex: 'm',
 };
-const RU_ADJ = { m: { transit: 'Транзитный', natal: 'натальный', pos: 'твой' }, f: { transit: 'Транзитная', natal: 'натальная', pos: 'твоя' }, n: { transit: 'Транзитное', natal: 'натальное', pos: 'твоё' } };
+const RU_ADJ = {
+  m: { transit: 'Транзитный', prog: 'Прогрессированный', solar: 'Солярный', natal: 'натальный', pos: 'твой' },
+  f: { transit: 'Транзитная', prog: 'Прогрессированная', solar: 'Солярная', natal: 'натальная', pos: 'твоя' },
+  n: { transit: 'Транзитное', prog: 'Прогрессированное', solar: 'Солярное', natal: 'натальное', pos: 'твоё' },
+};
 const TRANSIT_SPEED_HINT = {
   Sun: 'меняется за смену знака ~раз в месяц, точный аспект держится 1-2 дня',
   Moon: 'самая быстрая точка карты — точный аспект держится всего несколько часов',
@@ -10345,6 +10667,433 @@ function renderTransits() {
 }
 
 transitGenerateBtn.addEventListener('click', renderTransits);
+
+// ============================================================================
+// UI «Прогрессии»: вторичные прогрессии ("день за год", §16 брифа) на
+// выбранную дату относительно натальной карты. Использует
+// AstraEngine.calculateSecondaryProgressions (готовая функция движка — сама
+// прогрессированная карта считается ровно как натальная, просто на другую
+// дату) + AstraEngine.findAspects напрямую (не calculateTransits — движок не
+// экспортирует отдельной "calculateProgressionsToNatal", поэтому
+// прогрессированные-к-натальным аспекты собираются здесь тем же приёмом,
+// что и внутри src/charts/transits.ts: точки двух карт с префиксами N:/P:,
+// один общий findAspects, отбор кросс-пар).
+// ============================================================================
+const progressionDateEl = document.getElementById('progression-date');
+const progressionGenerateBtn = document.getElementById('progression-generate-btn');
+const progressionStatusEl = document.getElementById('progression-status');
+const progressionBodyEl = document.getElementById('progression-body');
+
+// У прогрессий принят более узкий орб, чем даже у транзитов — прогрессии
+// движутся настолько медленно, что традиционно берут ~1° (день-за-год делает
+// даже "широкий" по натальным меркам орб бессмысленным: 3° для Солнца — это
+// 3 года разницы в прогрессированной дате).
+const PROGRESSION_MAX_ORB = {
+  conjunction: 1.5, opposition: 1.5, square: 1.2, trine: 1.2, sextile: 1,
+  quincunx: 0.8, semisextile: 0.6, semisquare: 0.6, sesquiquadrate: 0.6,
+};
+
+progressionDateEl.value = todayDateStr();
+
+function resetProgressions() {
+  progressionBodyEl.classList.remove('active');
+  progressionBodyEl.innerHTML = '';
+  progressionStatusEl.textContent = '';
+  progressionGenerateBtn.textContent = 'Показать прогрессии';
+}
+
+function renderProgressions() {
+  try {
+    const dateStr = progressionDateEl.value;
+    if (!dateStr) { progressionStatusEl.textContent = 'Укажи дату.'; return; }
+    const [py, pm, pd] = dateStr.split('-').map(Number);
+    const targetDate = new Date(Date.UTC(py, pm - 1, pd, 12, 0, 0));
+
+    const natalFull = AstraEngine.calculateNatalChart(currentBirthMoment, currentBirthLocation, { houseSystem: currentSystem });
+    const progressedFull = AstraEngine.calculateSecondaryProgressions(natalFull, targetDate, { houseSystem: currentSystem });
+
+    const positions = progressedFull.points.filter((p) => TRANSIT_TRACKED_PLANETS.includes(p.name));
+    const posHtml = positions.map((p) => {
+      const houseNote = p.house ? ` · в прогрессированном ${p.house}-м доме` : '';
+      return `<div class="transit-pos-item"><span class="transit-pos-name">${PLANET_GLYPH[p.name] || ''} ${PLANET_NAME_RU[p.name] || p.name}</span>` +
+        `<span class="transit-pos-detail">${SIGN_NAME_RU[p.sign]} ${p.degreeInSign.toFixed(1)}°${p.isRetrograde ? ' ℞' : ''}${houseNote}</span></div>`;
+    }).join('');
+
+    const prefixed = (points, tag) => points.map((p) => ({ ...p, name: tag + ':' + p.name }));
+    const combined = [...prefixed(natalFull.points, 'N'), ...prefixed(progressedFull.points, 'P')];
+    const allHits = AstraEngine.findAspects(combined)
+      .filter((a) => (String(a.pointA).startsWith('P:') && String(a.pointB).startsWith('N:')) || (String(a.pointA).startsWith('N:') && String(a.pointB).startsWith('P:')))
+      .map((a) => {
+        const pRaw = String(a.pointA).startsWith('P:') ? a.pointA : a.pointB;
+        const nRaw = String(a.pointA).startsWith('N:') ? a.pointA : a.pointB;
+        return { progPlanet: String(pRaw).slice(2), natalPlanet: String(nRaw).slice(2), type: a.type, orb: a.orb, applying: a.applying };
+      })
+      .filter((a) => TRANSIT_TRACKED_PLANETS.includes(a.progPlanet) && !TRANSIT_NATAL_EXCLUDE.has(a.natalPlanet))
+      .filter((a) => a.orb <= (PROGRESSION_MAX_ORB[a.type] ?? a.orb))
+      .sort((a, b) => a.orb - b.orb);
+
+    const hits = allHits.slice(0, TRANSIT_LIST_LIMIT);
+    const hiddenCount = allHits.length - hits.length;
+
+    const hitsHtml = hits.length ? hits.map((a) => {
+      const frame = ASPECT_FRAME[a.type];
+      const pGender = RU_GENDER[a.progPlanet] || 'm';
+      const nGender = RU_GENDER[a.natalPlanet] || 'm';
+      const pPhrase = `${RU_ADJ[pGender].prog} ${PLANET_NAME_RU[a.progPlanet] || a.progPlanet}`;
+      const nPhrase = `${RU_ADJ[nGender].pos} ${RU_ADJ[nGender].natal} ${PLANET_NAME_RU[a.natalPlanet] || a.natalPlanet}`;
+      const text = frame ? frame.text(pPhrase, nPhrase) : `${pPhrase} образует ${ASPECT_NAME_RU[a.type] || a.type} к ${nPhrase}.`;
+      return `<div class="transit-item"><div class="transit-item-head"><b>${PLANET_NAME_RU[a.progPlanet] || a.progPlanet} ${ASPECT_NAME_RU[a.type] || a.type} ${PLANET_NAME_RU[a.natalPlanet] || a.natalPlanet}</b>` +
+        `<span class="transit-orb">орб ${a.orb.toFixed(2)}° · ${a.applying ? 'применяется' : 'расходится'}</span></div>` +
+        `<p>${text}</p></div>`;
+    }).join('') + (hiddenCount > 0
+      ? `<p class="transit-empty">Показаны ${hits.length} самых точных попаданий из ${allHits.length} — остальные скрыты, чтобы список оставался читаемым.</p>`
+      : '')
+      : '<p class="transit-empty">Точных прогрессированных аспектов к натальным точкам на эту дату нет (в пределах узкого орба, принятого для прогрессий).</p>';
+
+    const timeNote = !natalFull.meta.timeKnown
+      ? '<p class="transit-time-note">Время рождения неизвестно (карта построена как solar chart) — прогрессированные дома здесь ориентировочные, привязаны к упрощённым куспидам, а не к настоящему времени суток.</p>'
+      : '';
+
+    const birthMs = currentBirthMoment.utc.getTime();
+    const elapsedYears = (targetDate.getTime() - birthMs) / (365.25 * 24 * 3600 * 1000);
+    const progDateLabel = progressedFull.moment.utc.toISOString().slice(0, 10).split('-').reverse().join('.');
+    const ageNote = `<p class="transit-time-note">Метод «день за год»: ${dateStr.split('-').reverse().join('.')} — это ${elapsedYears.toFixed(1)} лет после рождения, поэтому положения планет ниже посчитаны на прогрессированную дату ${progDateLabel}.</p>`;
+
+    progressionBodyEl.innerHTML = ageNote + timeNote + `<div class="transit-positions">${posHtml}</div>` + `<div class="transit-list">${hitsHtml}</div>`;
+    progressionBodyEl.classList.add('active');
+
+    progressionStatusEl.textContent = `Прогрессии на ${dateStr.split('-').reverse().join('.')} — система домов «${HOUSE_SYSTEM_LABEL[currentSystem]}».`;
+    progressionGenerateBtn.textContent = 'Обновить';
+  } catch (err) {
+    console.error(err);
+    progressionStatusEl.textContent = 'Не удалось посчитать прогрессии: ' + (err && err.message ? err.message : String(err));
+  }
+}
+
+progressionGenerateBtn.addEventListener('click', renderProgressions);
+
+// ============================================================================
+// UI «Solar Return» (соляр, §17 брифа): отдельная карта на точный момент
+// возврата транзитного Солнца к натальной долготе в выбранном году
+// (AstraEngine.calculateSolarReturn — сам движок ищет точный момент через
+// Astronomy.SearchSunLongitude, здесь только UI и текст). Соляр — полноценная
+// карта сама по себе (свои дома, свои внутренние аспекты), плюс отдельно
+// показываем её аспекты к натальным точкам — тем же приёмом, что и в
+// «Прогрессиях» выше (findAspects по объединённым точкам с префиксами).
+// ============================================================================
+const solarReturnYearEl = document.getElementById('solar-return-year');
+const solarReturnGenerateBtn = document.getElementById('solar-return-generate-btn');
+const solarReturnStatusEl = document.getElementById('solar-return-status');
+const solarReturnBodyEl = document.getElementById('solar-return-body');
+
+solarReturnYearEl.value = new Date().getFullYear();
+
+function resetSolarReturn() {
+  solarReturnBodyEl.classList.remove('active');
+  solarReturnBodyEl.innerHTML = '';
+  solarReturnStatusEl.textContent = '';
+  solarReturnGenerateBtn.textContent = 'Построить соляр';
+}
+
+function renderSolarReturn() {
+  try {
+    const year = parseInt(solarReturnYearEl.value, 10);
+    if (!year || year < 1900 || year > 2100) { solarReturnStatusEl.textContent = 'Укажи год числом, например 2026.'; return; }
+
+    const natalFull = AstraEngine.calculateNatalChart(currentBirthMoment, currentBirthLocation, { houseSystem: currentSystem });
+    const srFull = AstraEngine.calculateSolarReturn(natalFull, year, { houseSystem: currentSystem });
+
+    let headline = '';
+    if (srFull.houses.reliable !== false) {
+      const ascSignDeg = lonToSignDeg(srFull.houses.ascendant);
+      const s = ZODIAC_TRAITS[ascSignDeg.sign];
+      headline = `<p class="transit-time-note">Асцендент соляра — в ${SIGN_NAME_RU[ascSignDeg.sign]}: год окрашен в ${s.core}.</p>`;
+    }
+
+    const srDateLabel = srFull.moment.utc.toISOString().slice(0, 10).split('-').reverse().join('.');
+    const srTimeLabel = srFull.moment.utc.toISOString().slice(11, 16);
+    const momentNote = `<p class="transit-time-note">Точный момент соляра: ${srDateLabel}, ${srTimeLabel} UTC (место — ${currentBirthLocation.label || 'место рождения'}).</p>`;
+
+    const positions = srFull.points.filter((p) => TRANSIT_TRACKED_PLANETS.includes(p.name));
+    const posHtml = positions.map((p) => {
+      const houseNote = p.house ? ` · в ${p.house}-м доме соляра` : '';
+      return `<div class="transit-pos-item"><span class="transit-pos-name">${PLANET_GLYPH[p.name] || ''} ${PLANET_NAME_RU[p.name] || p.name}</span>` +
+        `<span class="transit-pos-detail">${SIGN_NAME_RU[p.sign]} ${p.degreeInSign.toFixed(1)}°${p.isRetrograde ? ' ℞' : ''}${houseNote}</span></div>`;
+    }).join('');
+
+    const prefixed = (points, tag) => points.map((p) => ({ ...p, name: tag + ':' + p.name }));
+    const combined = [...prefixed(natalFull.points, 'N'), ...prefixed(srFull.points, 'S')];
+    const allHits = AstraEngine.findAspects(combined)
+      .filter((a) => (String(a.pointA).startsWith('S:') && String(a.pointB).startsWith('N:')) || (String(a.pointA).startsWith('N:') && String(a.pointB).startsWith('S:')))
+      .map((a) => {
+        const sRaw = String(a.pointA).startsWith('S:') ? a.pointA : a.pointB;
+        const nRaw = String(a.pointA).startsWith('N:') ? a.pointA : a.pointB;
+        return { srPlanet: String(sRaw).slice(2), natalPlanet: String(nRaw).slice(2), type: a.type, orb: a.orb, applying: a.applying };
+      })
+      // Солярное Солнце всегда ровно в соединении с натальным Солнцем (0°
+      // орб) — это определение метода (момент соляра ищется именно как
+      // возврат Солнца к натальной долготе), а не значимый аспект года.
+      .filter((a) => !(a.srPlanet === 'Sun' && a.natalPlanet === 'Sun'))
+      .filter((a) => TRANSIT_TRACKED_PLANETS.includes(a.srPlanet) && !TRANSIT_NATAL_EXCLUDE.has(a.natalPlanet))
+      .filter((a) => a.orb <= (TRANSIT_MAX_ORB[a.type] ?? a.orb))
+      .sort((a, b) => a.orb - b.orb);
+
+    const hits = allHits.slice(0, TRANSIT_LIST_LIMIT);
+    const hiddenCount = allHits.length - hits.length;
+
+    const hitsHtml = hits.length ? hits.map((a) => {
+      const frame = ASPECT_FRAME[a.type];
+      const sGender = RU_GENDER[a.srPlanet] || 'm';
+      const nGender = RU_GENDER[a.natalPlanet] || 'm';
+      const sPhrase = `${RU_ADJ[sGender].solar} ${PLANET_NAME_RU[a.srPlanet] || a.srPlanet}`;
+      const nPhrase = `${RU_ADJ[nGender].pos} ${RU_ADJ[nGender].natal} ${PLANET_NAME_RU[a.natalPlanet] || a.natalPlanet}`;
+      const text = frame ? frame.text(sPhrase, nPhrase) : `${sPhrase} образует ${ASPECT_NAME_RU[a.type] || a.type} к ${nPhrase}.`;
+      return `<div class="transit-item"><div class="transit-item-head"><b>${PLANET_NAME_RU[a.srPlanet] || a.srPlanet} ${ASPECT_NAME_RU[a.type] || a.type} ${PLANET_NAME_RU[a.natalPlanet] || a.natalPlanet}</b>` +
+        `<span class="transit-orb">орб ${a.orb.toFixed(2)}° · ${a.applying ? 'применяется' : 'расходится'}</span></div>` +
+        `<p>${text}</p></div>`;
+    }).join('') + (hiddenCount > 0
+      ? `<p class="transit-empty">Показаны ${hits.length} самых точных попаданий из ${allHits.length}.</p>`
+      : '')
+      : '<p class="transit-empty">Точных аспектов соляра к натальным точкам в пределах допустимого орба нет.</p>';
+
+    solarReturnBodyEl.innerHTML = headline + momentNote + `<div class="transit-positions">${posHtml}</div>` + `<div class="transit-list">${hitsHtml}</div>`;
+    solarReturnBodyEl.classList.add('active');
+    solarReturnStatusEl.textContent = `Соляр на ${year} год построен — система домов «${HOUSE_SYSTEM_LABEL[currentSystem]}».`;
+    solarReturnGenerateBtn.textContent = 'Обновить';
+  } catch (err) {
+    console.error(err);
+    solarReturnStatusEl.textContent = 'Не удалось построить соляр: ' + (err && err.message ? err.message : String(err));
+  }
+}
+
+solarReturnGenerateBtn.addEventListener('click', renderSolarReturn);
+
+// ============================================================================
+// UI «Синастрия» (§18-19 брифа): межличностные аспекты + наложение домов
+// (AstraEngine.calculateSynastry — готовая функция движка) + композитная
+// карта (циркулярная середина одноимённых точек и куспидов обеих карт —
+// движок отдельной calculateComposite не экспортирует, метод "midpoint
+// composite" собран здесь тем же приёмом, что и в других UI-разделах).
+// Данные второго человека существуют только в памяти вкладки браузера —
+// нигде не сохраняются и не отправляются.
+// ============================================================================
+const synastryBNameEl = document.getElementById('synastry-b-name');
+const synastryBDateEl = document.getElementById('synastry-b-date');
+const synastryBTimeEl = document.getElementById('synastry-b-time');
+const synastryBTimeUnknownEl = document.getElementById('synastry-b-time-unknown');
+const synastryBCityEl = document.getElementById('synastry-b-city');
+const synastryBCityCoordsEl = document.getElementById('synastry-b-city-coords');
+const synastryBManualToggleEl = document.getElementById('synastry-b-manual-toggle');
+const synastryBManualFieldsEl = document.getElementById('synastry-b-manual-fields');
+const synastryBManualLatEl = document.getElementById('synastry-b-manual-lat');
+const synastryBManualLonEl = document.getElementById('synastry-b-manual-lon');
+const synastryBManualTzEl = document.getElementById('synastry-b-manual-tz');
+const synastryGenerateBtn = document.getElementById('synastry-generate-btn');
+const synastryStatusEl = document.getElementById('synastry-status');
+const synastryBodyEl = document.getElementById('synastry-body');
+
+// та же таблица часовых поясов, что и в основной форме (TZ_NAMES заполнена
+// выше при инициализации manual-tz)
+TZ_NAMES.forEach((tz) => {
+  const opt = document.createElement('option');
+  opt.value = tz;
+  opt.textContent = tz;
+  if (tz === 'Europe/Moscow') opt.selected = true;
+  synastryBManualTzEl.appendChild(opt);
+});
+
+synastryBTimeUnknownEl.addEventListener('change', () => { synastryBTimeEl.disabled = synastryBTimeUnknownEl.checked; });
+synastryBManualToggleEl.addEventListener('change', () => {
+  synastryBManualFieldsEl.style.display = synastryBManualToggleEl.checked ? 'block' : 'none';
+  synastryBCityEl.disabled = synastryBManualToggleEl.checked;
+  updateSynastryBCityCoordsHint();
+});
+// поле города второго человека делит общий datalist #city-list с основной
+// формой — подсказки в нём просто обновляются на ввод последнего из двух
+// полей, это не влияет на корректность расчёта (сам расчёт идёт через
+// resolveCity по введённому тексту, а не по даталисту)
+synastryBCityEl.addEventListener('input', (e) => {
+  scheduleCityFilter(e.target.value);
+  updateSynastryBCityCoordsHint();
+});
+
+function updateSynastryBCityCoordsHint() {
+  if (synastryBManualToggleEl.checked) { synastryBCityCoordsEl.textContent = ''; synastryBCityCoordsEl.className = 'city-coords'; return; }
+  const name = synastryBCityEl.value.trim();
+  if (!name) { synastryBCityCoordsEl.textContent = ''; synastryBCityCoordsEl.className = 'city-coords'; return; }
+  const { city, ambiguous } = resolveCity(name);
+  if (ambiguous) {
+    synastryBCityCoordsEl.textContent = 'С таким названием есть несколько городов — уточни, какой: ' + ambiguous.map((c) => c.n).join(', ');
+    synastryBCityCoordsEl.className = 'city-coords not-found';
+    return;
+  }
+  if (!city) {
+    synastryBCityCoordsEl.textContent = 'Город не найден в базе — выбери вариант из списка или укажи координаты вручную.';
+    synastryBCityCoordsEl.className = 'city-coords not-found';
+    return;
+  }
+  synastryBCityCoordsEl.innerHTML =
+    'Координаты: <span class="coord-value">' + formatCoord(city.lat, 'N', 'S') + ', ' + formatCoord(city.lon, 'E', 'W') +
+    '</span> · <span class="coord-value">' + city.tz + '</span>';
+  synastryBCityCoordsEl.className = 'city-coords';
+}
+updateSynastryBCityCoordsHint();
+
+function resetSynastry() {
+  synastryBodyEl.classList.remove('active');
+  synastryBodyEl.innerHTML = '';
+  synastryStatusEl.textContent = '';
+  synastryGenerateBtn.textContent = 'Построить синастрию';
+}
+
+// У синастрии (два разных натальных орба сталкиваются друг с другом)
+// принято брать орбы шире транзитных, но уже "самонатальных": типичная
+// профессиональная практика — около 3-5° для мажорных аспектов.
+const SYNASTRY_MAX_ORB = {
+  conjunction: 5, opposition: 5, square: 4, trine: 4, sextile: 3,
+  quincunx: 2, semisextile: 1.5, semisquare: 1.5, sesquiquadrate: 1.5,
+};
+const SYNASTRY_LIST_LIMIT = 18;
+
+// середина кратчайшей дуги между двумя долготами (0-360°) — стандартный
+// "midpoint"-метод построения композитной карты
+function circularMidpoint(lonA, lonB) {
+  const diff = ((lonB - lonA + 540) % 360) - 180; // подписанная кратчайшая разница, (-180, 180]
+  return (lonA + diff / 2 + 360) % 360;
+}
+
+function parseSynastryBirthInput() {
+  const dateStr = synastryBDateEl.value;
+  if (!dateStr) return { error: 'Укажи дату рождения второго человека.' };
+  const [y, mo, d] = dateStr.split('-').map(Number);
+  const timeKnown = !synastryBTimeUnknownEl.checked;
+  let hour = 12, minute = 0;
+  if (timeKnown) {
+    const timeStr = synastryBTimeEl.value;
+    if (!timeStr) return { error: 'Укажи время рождения второго человека — или отметь «время неизвестно».' };
+    [hour, minute] = timeStr.split(':').map(Number);
+  }
+  let location, tz;
+  if (synastryBManualToggleEl.checked) {
+    const lat = parseFloat(synastryBManualLatEl.value);
+    const lon = parseFloat(synastryBManualLonEl.value);
+    if (Number.isNaN(lat) || Number.isNaN(lon)) return { error: 'Укажи широту и долготу второго человека числом (например, 55.7558).' };
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return { error: 'Широта должна быть от −90 до 90, долгота — от −180 до 180.' };
+    tz = synastryBManualTzEl.value;
+    location = { latitude: lat, longitude: lon, label: `${lat.toFixed(4)}, ${lon.toFixed(4)}` };
+  } else {
+    const resolved = resolveCity(synastryBCityEl.value);
+    if (resolved.ambiguous) return { error: 'С таким названием есть несколько городов — уточни, какой: ' + resolved.ambiguous.map((c) => c.n).join(', ') };
+    if (!resolved.city) return { error: 'Такого города нет в списке — выбери из подсказки или включи ручной ввод координат.' };
+    tz = resolved.city.tz;
+    location = { latitude: resolved.city.lat, longitude: resolved.city.lon, label: resolved.city.n };
+  }
+  const utcDate = timeKnown
+    ? resolveUtcFromLocal(y, mo, d, hour, minute, tz)
+    : new Date(Date.UTC(y, mo - 1, d, 12, 0, 0));
+  return { moment: { utc: utcDate, timeKnown }, location };
+}
+
+function renderSynastry() {
+  try {
+    const parsedB = parseSynastryBirthInput();
+    if (parsedB.error) { synastryStatusEl.textContent = parsedB.error; return; }
+
+    const name = (synastryBNameEl.value || '').trim() || 'Партнёр';
+    const natalA = AstraEngine.calculateNatalChart(currentBirthMoment, currentBirthLocation, { houseSystem: currentSystem });
+    const natalB = AstraEngine.calculateNatalChart(parsedB.moment, parsedB.location, { houseSystem: currentSystem });
+    const synastry = AstraEngine.calculateSynastry(natalA, natalB);
+
+    // --- межличностные аспекты ---
+    const allHits = synastry.interAspects
+      .map((a) => {
+        const aRaw = String(a.pointA).startsWith('A:') ? a.pointA : a.pointB;
+        const bRaw = String(a.pointA).startsWith('B:') ? a.pointA : a.pointB;
+        return { aPlanet: String(aRaw).slice(2), bPlanet: String(bRaw).slice(2), type: a.type, orb: a.orb, applying: a.applying };
+      })
+      .filter((a) => TRANSIT_TRACKED_PLANETS.includes(a.aPlanet) && TRANSIT_TRACKED_PLANETS.includes(a.bPlanet))
+      .filter((a) => a.orb <= (SYNASTRY_MAX_ORB[a.type] ?? a.orb))
+      .sort((a, b) => a.orb - b.orb);
+
+    const hits = allHits.slice(0, SYNASTRY_LIST_LIMIT);
+    const hiddenCount = allHits.length - hits.length;
+
+    const hitsHtml = hits.length ? hits.map((a) => {
+      const frame = ASPECT_FRAME[a.type];
+      const aGender = RU_GENDER[a.aPlanet] || 'm';
+      const aPhrase = `${RU_ADJ[aGender].pos} ${RU_ADJ[aGender].natal} ${PLANET_NAME_RU[a.aPlanet] || a.aPlanet}`;
+      const bPhrase = `${PLANET_NAME_RU[a.bPlanet] || a.bPlanet} (${name})`;
+      const text = frame ? frame.text(aPhrase, bPhrase) : `${aPhrase} и ${bPhrase} образуют ${ASPECT_NAME_RU[a.type] || a.type}.`;
+      return `<div class="transit-item"><div class="transit-item-head"><b>${PLANET_NAME_RU[a.aPlanet] || a.aPlanet} ${ASPECT_NAME_RU[a.type] || a.type} ${PLANET_NAME_RU[a.bPlanet] || a.bPlanet} (${name})</b>` +
+        `<span class="transit-orb">орб ${a.orb.toFixed(2)}° · ${a.applying ? 'применяется' : 'расходится'}</span></div>` +
+        `<p>${text}</p></div>`;
+    }).join('') + (hiddenCount > 0
+      ? `<p class="transit-empty">Показаны ${hits.length} самых точных попаданий из ${allHits.length} — остальные скрыты, чтобы список оставался читаемым.</p>`
+      : '')
+      : '<p class="transit-empty">Точных межличностных аспектов в пределах принятого для синастрии орба нет.</p>';
+
+    // --- наложение домов ---
+    let overlayHtml;
+    if (natalA.houses.reliable !== false && natalB.houses.reliable !== false) {
+      const bInAList = TRANSIT_TRACKED_PLANETS.map((pname) => {
+        const h = synastry.houseOverlayBinA[pname];
+        return h ? `<li><span>${PLANET_NAME_RU[pname] || pname}</span><span>${h}-й дом</span></li>` : '';
+      }).join('');
+      const aInBList = TRANSIT_TRACKED_PLANETS.map((pname) => {
+        const h = synastry.houseOverlayAinB[pname];
+        return h ? `<li><span>${PLANET_NAME_RU[pname] || pname}</span><span>${h}-й дом</span></li>` : '';
+      }).join('');
+      overlayHtml = `<h3 class="synastry-subhead">Наложение домов</h3>` +
+        `<div class="synastry-overlay-cols">` +
+        `<div class="synastry-overlay-col"><h4>Планеты «${name}» — в твоих домах</h4><ul class="synastry-overlay-list">${bInAList}</ul></div>` +
+        `<div class="synastry-overlay-col"><h4>Твои планеты — в домах «${name}»</h4><ul class="synastry-overlay-list">${aInBList}</ul></div>` +
+        `</div>`;
+    } else {
+      overlayHtml = '<h3 class="synastry-subhead">Наложение домов</h3>' +
+        '<p class="transit-time-note">Недоступно: время рождения хотя бы одного из вас неизвестно — нужны надёжные куспиды домов обеих карт.</p>';
+    }
+
+    // --- композитная карта (циркулярная середина точек и куспидов) ---
+    const compositeReliable = natalA.houses.reliable !== false && natalB.houses.reliable !== false;
+    let compositeCusps = null;
+    if (compositeReliable) {
+      compositeCusps = natalA.houses.cusps.map((c, i) => circularMidpoint(c, natalB.houses.cusps[i]));
+    }
+    const pointsA = new Map(natalA.points.map((p) => [p.name, p]));
+    const pointsB = new Map(natalB.points.map((p) => [p.name, p]));
+    const compRows = TRANSIT_TRACKED_PLANETS.map((pname) => {
+      const pa = pointsA.get(pname); const pb = pointsB.get(pname);
+      if (!pa || !pb) return '';
+      const compLon = circularMidpoint(pa.longitude, pb.longitude);
+      const sd = lonToSignDeg(compLon);
+      const houseNote = compositeCusps ? ` · в ${AstraEngine.houseOfPoint(compLon, compositeCusps)}-м доме композита` : '';
+      return `<div class="transit-pos-item"><span class="transit-pos-name">${PLANET_GLYPH[pname] || ''} ${PLANET_NAME_RU[pname] || pname}</span>` +
+        `<span class="transit-pos-detail">${SIGN_NAME_RU[sd.sign]} ${sd.degreeInSign.toFixed(1)}°${houseNote}</span></div>`;
+    }).join('');
+    let compositeHeadline;
+    if (compositeCusps) {
+      const compAsc = circularMidpoint(natalA.houses.ascendant, natalB.houses.ascendant);
+      const ascSd = lonToSignDeg(compAsc);
+      const s = ZODIAC_TRAITS[ascSd.sign];
+      compositeHeadline = `<p class="transit-time-note">Асцендент композита — в ${SIGN_NAME_RU[ascSd.sign]}: сами отношения как «третья сущность» окрашены в ${s.core}.</p>`;
+    } else {
+      compositeHeadline = '<p class="transit-time-note">Дома композита недоступны: время рождения хотя бы одного из вас неизвестно — показаны только положения по знакам.</p>';
+    }
+    const compositeHtml = `<h3 class="synastry-subhead">Композитная карта</h3>${compositeHeadline}<div class="transit-positions">${compRows}</div>`;
+
+    synastryBodyEl.innerHTML =
+      `<h3 class="synastry-subhead">Межличностные аспекты</h3><div class="transit-list">${hitsHtml}</div>` +
+      overlayHtml + compositeHtml;
+    synastryBodyEl.classList.add('active');
+    synastryStatusEl.textContent = `Синастрия с «${name}» построена — система домов «${HOUSE_SYSTEM_LABEL[currentSystem]}».`;
+    synastryGenerateBtn.textContent = 'Обновить';
+  } catch (err) {
+    console.error(err);
+    synastryStatusEl.textContent = 'Не удалось построить синастрию: ' + (err && err.message ? err.message : String(err));
+  }
+}
+
+synastryGenerateBtn.addEventListener('click', renderSynastry);
 </script>
 </body>
 </html>
