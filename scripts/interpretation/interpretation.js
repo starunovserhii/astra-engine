@@ -204,6 +204,86 @@ function basisLine(...parts) {
   return 'На основе: ' + parts.filter(Boolean).join(', ') + '.';
 }
 
+// --- "Объясни мою карту" (§38 брифа): ранжированный саммари самых заметных
+// конфигураций карты — не полный разбор (он и так есть в разделах ниже), а
+// вход в чтение: с чего начать смотреть. Скор: тип аспекта (мажорный весит
+// больше минорного) × точность орба (относительно натального допуска для
+// этой пары) + бонус за участие светил (Солнце/Луна) и личных планет +
+// то же для достоинств планет (обитель/экзальтация выше изгнания/падения).
+const TOP_INSIGHT_ASPECT_BASE_ORB = { conjunction: 8, opposition: 8, square: 7, trine: 7, sextile: 5, semisextile: 2, semisquare: 2, sesquiquadrate: 2, quincunx: 3 };
+const TOP_INSIGHT_ASPECT_WEIGHT = { conjunction: 1.0, opposition: 0.95, square: 0.9, trine: 0.8, sextile: 0.7, quincunx: 0.4, semisextile: 0.3, semisquare: 0.3, sesquiquadrate: 0.3 };
+const TOP_INSIGHT_PERSONAL = new Set(['Mercury', 'Venus', 'Mars']);
+// Северный/Южный узел и Вертекс/Антивертекс — по построению ВСЕГДА ровно в
+// оппозиции (Южный узел = Северный + 180°, Антивертекс = Вертекс + 180°) —
+// это не настоящий аспект карты, а тавтология геометрии самих точек. Без
+// этого фильтра такие "аспекты" с орбом 0° постоянно занимают верхние места
+// в любом ранжировании по точности орба, вытесняя реальную информацию.
+const TAUTOLOGICAL_PAIRS = new Set(['MeanNode|MeanSouthNode', 'TrueNode|TrueSouthNode', 'Vertex|AntiVertex']);
+function isTautologicalPair(a, b) {
+  return TAUTOLOGICAL_PAIRS.has(a + '|' + b) || TAUTOLOGICAL_PAIRS.has(b + '|' + a);
+}
+
+function buildTopInsights(data) {
+  const byName = {};
+  data.points.forEach((p) => { byName[p.name] = p; });
+  const candidates = [];
+
+  data.aspects.forEach((a) => {
+    if (isTautologicalPair(a.a, a.b)) return;
+    const luminary = a.a === 'Sun' || a.b === 'Sun' || a.a === 'Moon' || a.b === 'Moon';
+    const maxOrb = (TOP_INSIGHT_ASPECT_BASE_ORB[a.type] || 5) + (luminary ? 2 : 0);
+    const tightness = Math.max(0, Math.min(1, 1 - a.orb / maxOrb));
+    const typeW = TOP_INSIGHT_ASPECT_WEIGHT[a.type] ?? 0.2;
+    // Возводим точность орба в степень >1 — иначе аспект почти на самой
+    // границе допустимого орба (т.е. едва заметный) всё равно набирает
+    // достаточно очков за счёт бонусов ниже и обгоняет по-настоящему точные
+    // аспекты. Бонусы ниже — это тай-брейкеры между сопоставимо точными
+    // аспектами, а не способ вытащить откровенно широкий орб в топ.
+    let score = typeW * Math.pow(tightness, 1.6);
+    if (luminary) score += 0.15;
+    if (TOP_INSIGHT_PERSONAL.has(a.a) || TOP_INSIGHT_PERSONAL.has(a.b)) score += 0.06;
+    const dignA = data.dignities[a.a], dignB = data.dignities[a.b];
+    if (['rulership', 'exaltation'].includes(dignA) || ['rulership', 'exaltation'].includes(dignB)) score += 0.05;
+    const nameA = PLANET_NAME_RU[a.a] || a.a, nameB = PLANET_NAME_RU[a.b] || a.b;
+    const frame = ASPECT_FRAME[a.type];
+    const text = frame ? frame.text(nameA, nameB) : `${nameA} и ${nameB} образуют ${ASPECT_NAME_RU[a.type] || a.type}.`;
+    candidates.push({
+      score,
+      html: `<p><b>${nameA} ${ASPECT_NAME_RU[a.type] || a.type} ${nameB}</b> <span class="insight-orb">(орб ${a.orb}°)</span> — ${text}</p>`,
+    });
+  });
+
+  ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto'].forEach((name) => {
+    const dignity = data.dignities[name];
+    const p = byName[name];
+    if (!dignity || !p) return;
+    const nameRu = PLANET_NAME_RU[name] || name;
+    const signRu = SIGN_NAME_RU[p.sign];
+    let score = dignity === 'rulership' ? 0.65 : dignity === 'exaltation' ? 0.55 : dignity === 'detriment' ? 0.32 : 0.28;
+    if (name === 'Sun' || name === 'Moon') score += 0.18;
+    else if (TOP_INSIGHT_PERSONAL.has(name)) score += 0.07;
+    const strong = dignity === 'rulership' || dignity === 'exaltation';
+    const text = strong
+      ? 'Одна из самых сильных точек этой карты — тема раскрывается почти без внутреннего сопротивления.'
+      : 'Тема, которая не даётся по умолчанию — но именно сознательная работа с ней обычно даёт больше всего личностного роста.';
+    candidates.push({
+      score,
+      html: `<p><b>${nameRu} в ${signRu}</b> <span class="insight-orb">(${DIGNITY_LABEL[dignity]})</span> — ${text}</p>`,
+    });
+  });
+
+  candidates.sort((a, b) => b.score - a.score);
+  const top = candidates.slice(0, 5);
+  if (!top.length) return null;
+
+  return {
+    title: 'Что важнее всего в этой карте',
+    basis: 'На основе: автоматическое ранжирование по точности орба, типу аспекта, участию светил (Солнце/Луна) и силе достоинства планеты — подробный разбор каждого пункта см. в разделах ниже.',
+    html: '<div class="insight-top-list">' + top.map((c) => `<div class="insight-top-item">${c.html}</div>`).join('') + '</div>' +
+      '<p class="insight-top-note">Это автоматический выбор самых заметных конфигураций карты — не единственно важное, а то, с чего имеет смысл начать чтение.</p>',
+  };
+}
+
 // Собирает объект {title, basis, html} для каждого раздела расшифровки.
 // pointHouses — DATA.pointHousesBySystem[currentSystem]; houses — DATA.housesBySystem[currentSystem]
 function buildInterpretation(data, pointHouses, houses) {
@@ -236,8 +316,8 @@ function buildInterpretation(data, pointHouses, houses) {
         `Луна в ${SIGN_NAME_RU[moon.sign]}${houseBasis(houseOf('Moon'))}`,
         ascSign ? `Асцендент в ${SIGN_NAME_RU[ascSign]}` : null
       ),
-      html: `<p>${describePlanet('Sun', sun.sign, houseOf('Sun'), dignityOf('Sun'), sun.isRetrograde)}</p>` +
-            `<p>${describePlanet('Moon', moon.sign, houseOf('Moon'), dignityOf('Moon'), moon.isRetrograde)}</p>` +
+      html: `<p id="interp-planet-Sun">${describePlanet('Sun', sun.sign, houseOf('Sun'), dignityOf('Sun'), sun.isRetrograde)}</p>` +
+            `<p id="interp-planet-Moon">${describePlanet('Moon', moon.sign, houseOf('Moon'), dignityOf('Moon'), moon.isRetrograde)}</p>` +
             `<p>${ascText}</p>`,
     });
   }
@@ -248,7 +328,7 @@ function buildInterpretation(data, pointHouses, houses) {
     sections.push({
       title: 'Мышление и стиль общения',
       basis: basisLine(`Меркурий в ${SIGN_NAME_RU[merc.sign]}${houseBasis(houseOf('Mercury'))}`),
-      html: `<p>${describePlanet('Mercury', merc.sign, houseOf('Mercury'), dignityOf('Mercury'), merc.isRetrograde)}</p>`,
+      html: `<p id="interp-planet-Mercury">${describePlanet('Mercury', merc.sign, houseOf('Mercury'), dignityOf('Mercury'), merc.isRetrograde)}</p>`,
     });
   }
 
@@ -258,8 +338,8 @@ function buildInterpretation(data, pointHouses, houses) {
   const venus = get('Venus'), mars = get('Mars');
   if (venus || mars) {
     let html = '';
-    if (venus) html += `<p>${describePlanet('Venus', venus.sign, houseOf('Venus'), dignityOf('Venus'), venus.isRetrograde)}</p>`;
-    if (mars) html += `<p>${describePlanet('Mars', mars.sign, houseOf('Mars'), dignityOf('Mars'), mars.isRetrograde)}</p>`;
+    if (venus) html += `<p id="interp-planet-Venus">${describePlanet('Venus', venus.sign, houseOf('Venus'), dignityOf('Venus'), venus.isRetrograde)}</p>`;
+    if (mars) html += `<p id="interp-planet-Mars">${describePlanet('Mars', mars.sign, houseOf('Mars'), dignityOf('Mars'), mars.isRetrograde)}</p>`;
     const seventhHouse = timeKnown ? '<p>' + `7-й дом (${HOUSE_THEME[7].title}) показывает, каким партнёрство видится на уровне жизненной темы — ${HOUSE_THEME[7].text}. Планеты в этом доме и его управитель добавляют красок к тому, что уже видно по Венере и Марсу — их можно рассмотреть отдельно на колесе выше.` + '</p>' : '';
     sections.push({
       title: 'Отношения и любовь',
@@ -274,7 +354,7 @@ function buildInterpretation(data, pointHouses, houses) {
     const mc = lonToSignDeg(houses.midheaven);
     const mcS = ZODIAC_TRAITS[mc.sign];
     let html = `<p>Середина неба (MC) в ${SIGN_NAME_RU[mc.sign]} — вершина карты, показывающая профессиональный путь и то, каким тебя видит общество со стороны. Здесь это связано с ${mcS.core}, а естественный ресурс на этом пути — ${mcS.strength}.</p>`;
-    if (saturn) html += `<p>${describePlanet('Saturn', saturn.sign, houseOf('Saturn'), dignityOf('Saturn'), saturn.isRetrograde)}</p>`;
+    if (saturn) html += `<p id="interp-planet-Saturn">${describePlanet('Saturn', saturn.sign, houseOf('Saturn'), dignityOf('Saturn'), saturn.isRetrograde)}</p>`;
     sections.push({
       title: 'Карьера и предназначение',
       basis: basisLine(`MC в ${SIGN_NAME_RU[mc.sign]}`, saturn ? `Сатурн в ${SIGN_NAME_RU[saturn.sign]}${houseBasis(houseOf('Saturn'))}` : null),
@@ -284,7 +364,7 @@ function buildInterpretation(data, pointHouses, houses) {
     sections.push({
       title: 'Карьера и предназначение',
       basis: basisLine(`Сатурн в ${SIGN_NAME_RU[saturn.sign]}`),
-      html: `<p>${describePlanet('Saturn', saturn.sign, null, dignityOf('Saturn'), saturn.isRetrograde)}</p><p>Без точного времени рождения MC и 10-й дом не рассчитаны — эта часть карты завязана на время суток.</p>`,
+      html: `<p id="interp-planet-Saturn">${describePlanet('Saturn', saturn.sign, null, dignityOf('Saturn'), saturn.isRetrograde)}</p><p>Без точного времени рождения MC и 10-й дом не рассчитаны — эта часть карты завязана на время суток.</p>`,
     });
   }
 
@@ -293,7 +373,7 @@ function buildInterpretation(data, pointHouses, houses) {
   {
     let html = '';
     if (venus) html += `<p>Венера, помимо отношений, отвечает и за то, что приносит ощущение ценности и удовольствия от обладания — включая деньги и вещи.</p>`;
-    if (jupiter) html += `<p>${describePlanet('Jupiter', jupiter.sign, houseOf('Jupiter'), dignityOf('Jupiter'), jupiter.isRetrograde)}</p>`;
+    if (jupiter) html += `<p id="interp-planet-Jupiter">${describePlanet('Jupiter', jupiter.sign, houseOf('Jupiter'), dignityOf('Jupiter'), jupiter.isRetrograde)}</p>`;
     if (timeKnown) html += `<p>2-й дом (${HOUSE_THEME[2].title}) — ${HOUSE_THEME[2].text}. Посмотри, какие планеты в него попадают на колесе: они прямо описывают твой стиль обращения с ресурсами.</p>`;
     if (html) {
       sections.push({
@@ -347,8 +427,12 @@ function buildInterpretation(data, pointHouses, houses) {
   }
 
   // --- 9. Ключевые аспекты (полный список, отсортированный по орбу — точнее орб, сильнее аспект) ---
-  if (data.aspects.length) {
-    const sorted = [...data.aspects].sort((a, b) => a.orb - b.orb).slice(0, 8);
+  // Тавтологичные пары (Узел/Южный узел, Вертекс/Антивертекс — см.
+  // isTautologicalPair) исключены: они всегда ровно в оппозиции по
+  // построению и без фильтра постоянно вытесняли бы настоящие аспекты.
+  const meaningfulAspects = data.aspects.filter((a) => !isTautologicalPair(a.a, a.b));
+  if (meaningfulAspects.length) {
+    const sorted = [...meaningfulAspects].sort((a, b) => a.orb - b.orb).slice(0, 8);
     const items = sorted.map((a) => {
       const frame = ASPECT_FRAME[a.type];
       const nameA = PLANET_NAME_RU[a.a] || a.a, nameB = PLANET_NAME_RU[a.b] || a.b;
@@ -376,6 +460,9 @@ function buildInterpretation(data, pointHouses, houses) {
       html: `<ul class="interp-house-list">${rows.join('')}</ul>`,
     });
   }
+
+  const topInsights = buildTopInsights(data);
+  if (topInsights) sections.unshift(topInsights);
 
   return sections;
 }
