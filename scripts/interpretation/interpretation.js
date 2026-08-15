@@ -450,7 +450,7 @@ function buildInterpretation(data, pointHouses, houses) {
   if (timeKnown && pointHouses) {
     const rows = [];
     for (let h = 1; h <= 12; h++) {
-      const occupants = data.points.filter((p) => pointHouses[p.name] === h && !HIDDEN_FROM_WHEEL.has(p.name));
+      const occupants = data.points.filter((p) => pointHouses[p.name] === h && !ALWAYS_HIDDEN_POINTS.has(p.name));
       const names = occupants.map((p) => `${PLANET_GLYPH[p.name] || ''} ${PLANET_NAME_RU[p.name] || p.name}`).join(', ');
       rows.push(`<li><b>${h}. ${HOUSE_THEME[h].title[0].toUpperCase() + HOUSE_THEME[h].title.slice(1)}</b>${names ? ' — ' + names : ' — пусто (тема дома от этого не менее значима, просто не акцентирована конкретной планетой)'}</li>`);
     }
