@@ -4,7 +4,17 @@
  * компактный JSON в stdout — используется build-скриптом сайта.
  */
 import { calculateNatalChart } from '../charts/natal';
-import { HouseSystemId, EventMoment } from '../types';
+import { findAspects } from '../astrological/aspects';
+import { HouseSystemId, EventMoment, AspectType } from '../types';
+
+// Максимально широкие орбы (см. тот же WIDE_ASPECT_ORBS в site/template.html,
+// buildChartData) — иначе демо-данные содержали бы аспекты только в пределах
+// орбов движка по умолчанию, и ползунок орба в настройках колеса на демо-
+// странице не мог бы показать что-то шире дефолта.
+const WIDE_ASPECT_ORBS: Partial<Record<AspectType, number>> = {
+  conjunction: 15, opposition: 15, square: 15, trine: 15, sextile: 15,
+  semisextile: 15, semisquare: 15, sesquiquadrate: 15, quincunx: 15,
+};
 
 const location = { latitude: 55.751244, longitude: 37.618423, label: 'Москва' };
 const moment: EventMoment = { utc: new Date(Date.UTC(1990, 5, 15, 8, 30, 0)), timeKnown: true };
@@ -29,7 +39,8 @@ for (const [name, d] of Object.entries(base.dignities)) {
   else if (d.fall) dignities[name] = 'fall';
 }
 
-const aspects = base.aspects.map((a) => ({
+const wideAspects = findAspects(base.points, { customOrbs: WIDE_ASPECT_ORBS });
+const aspects = wideAspects.map((a) => ({
   a: a.pointA,
   b: a.pointB,
   type: a.type,
