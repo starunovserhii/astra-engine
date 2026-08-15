@@ -1,5 +1,10 @@
 # ASTRA Engine
 
+[![CI](https://github.com/starunovserhii/astra-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/starunovserhii/astra-engine/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-cdaa6e.svg)](LICENSE)
+
+**[Живая демонстрация →](https://starunovserhii.github.io/astra-engine/)** — интерактивное колесо натальной карты: переключение систем домов, аспекты, insight-панель по клику на планету.
+
 Собственный расчётный астрологический движок для платформы ASTRA — не обёртка
 над сторонним сервисом и не Swiss Ephemeris, а самостоятельная реализация,
 собравшая в себе то, что анализ рынка (Part 1 брифа ASTRA) отметил как
@@ -133,3 +138,6 @@ const chart = calculateNatalChart(
 - `npm run build` — компиляция в `dist/`
 - `npm test` — структурные + эмпирические проверки (94 проверки)
 - `npm run demo` — демонстрация всех типов карт на примере
+- `npm run build:site` — пересобирает `index.html` (демо-страница GitHub Pages, `site/template.html` + свежие данные из движка)
+
+CI (`.github/workflows/ci.yml`) на каждый пуш/PR в `main` гоняет сборку, `npm test` и сборку демо-страницы.
