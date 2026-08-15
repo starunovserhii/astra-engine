@@ -1,0 +1,16 @@
+{
+  "name": "astra-interpret-worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Тонкий бэкенд-слой для AI-расшифровки ASTRA Engine (§11 брифа) — принимает уже посчитанные движком данные карты, вызывает Claude API со своим секретным ключом, возвращает текст. См. README.md.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241106.0",
+    "typescript": "^5.6.3",
+    "wrangler": "^3.90.0"
+  }
+}

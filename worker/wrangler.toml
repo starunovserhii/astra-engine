@@ -1,0 +1,13 @@
+name = "astra-interpret"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+# ANTHROPIC_API_KEY — секрет, задаётся ОТДЕЛЬНО от этого файла и никогда не
+# коммитится в git:
+#   wrangler secret put ANTHROPIC_API_KEY
+#
+# Обычные (не секретные) переменные — модель и разрешённый origin для CORS.
+# Смени ALLOWED_ORIGIN, если демо переедет на другой домен.
+[vars]
+ANTHROPIC_MODEL = "claude-sonnet-4-5"
+ALLOWED_ORIGIN = "https://starunovserhii.github.io"
