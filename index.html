@@ -297,6 +297,22 @@ const HOUSE_SYSTEM_LABEL = {
   koch: 'Koch', regiomontanus: 'Regiomontanus', campanus: 'Campanus', porphyry: 'Porphyry', alcabitius: 'Alcabitius',
 };
 const DIGNITY_LABEL = { rulership: 'Обитель', exaltation: 'Экзальтация', detriment: 'Изгнание', fall: 'Падение' };
+const PLANET_NAME_RU = {
+  Sun: 'Солнце', Moon: 'Луна', Mercury: 'Меркурий', Venus: 'Венера', Mars: 'Марс', Jupiter: 'Юпитер', Saturn: 'Сатурн',
+  Uranus: 'Уран', Neptune: 'Нептун', Pluto: 'Плутон', Chiron: 'Хирон',
+  MeanNode: 'Северный узел (средний)', TrueNode: 'Северный узел (истинный)',
+  MeanSouthNode: 'Южный узел (средний)', TrueSouthNode: 'Южный узел (истинный)',
+  MeanLilith: 'Лилит (средняя)', TrueLilith: 'Лилит (истинная)',
+  PartOfFortune: 'Парс Фортуны', Vertex: 'Вертекс', AntiVertex: 'Антивертекс',
+};
+const SIGN_NAME_RU = {
+  Aries: 'Овен', Taurus: 'Телец', Gemini: 'Близнецы', Cancer: 'Рак', Leo: 'Лев', Virgo: 'Дева',
+  Libra: 'Весы', Scorpio: 'Скорпион', Sagittarius: 'Стрелец', Capricorn: 'Козерог', Aquarius: 'Водолей', Pisces: 'Рыбы',
+};
+const ASPECT_NAME_RU = {
+  conjunction: 'соединение', opposition: 'оппозиция', square: 'квадрат', trine: 'трин', sextile: 'секстиль',
+  semisextile: 'полусекстиль', semisquare: 'полуквадрат', sesquiquadrate: 'полутораквадрат', quincunx: 'квинконс',
+};
 const ASPECT_COLOR = {
   conjunction: '#9a95a8', opposition: '#c9705a', square: '#c9705a',
   trine: '#8fa9c0', sextile: '#8fa9c0',
@@ -479,8 +495,8 @@ function renderInsight(pointHouses) {
   if (!p) return;
   empty.style.display = 'none';
   body.classList.add('active');
-  document.getElementById('insight-title').textContent = `${PLANET_GLYPH[p.name] || ''} ${p.name}`.trim();
-  document.getElementById('insight-sub').textContent = `${SIGN_GLYPH[p.sign]} ${p.sign} ${p.degreeInSign.toFixed(2)}°`;
+  document.getElementById('insight-title').textContent = `${PLANET_GLYPH[p.name] || ''} ${PLANET_NAME_RU[p.name] || p.name}`.trim();
+  document.getElementById('insight-sub').textContent = `${SIGN_GLYPH[p.sign]} ${SIGN_NAME_RU[p.sign] || p.sign} ${p.degreeInSign.toFixed(2)}°`;
   document.getElementById('fact-house').textContent = pointHouses[p.name] ? `Дом ${pointHouses[p.name]}` : '—';
   document.getElementById('fact-retro').textContent = p.isRetrograde ? 'Да (R)' : 'Нет';
   document.getElementById('fact-dignity').textContent = DATA.dignities[p.name] ? DIGNITY_LABEL[DATA.dignities[p.name]] : '—';
@@ -496,7 +512,7 @@ function renderInsight(pointHouses) {
     related.forEach((a) => {
       const other = a.a === p.name ? a.b : a.a;
       const li = document.createElement('li');
-      li.innerHTML = `<b>${PLANET_GLYPH[other] || other} ${other}</b> — ${a.type}, орб ${a.orb}° (${a.applying ? 'применяется' : 'расходится'})`;
+      li.innerHTML = `<b>${PLANET_GLYPH[other] || other} ${PLANET_NAME_RU[other] || other}</b> — ${ASPECT_NAME_RU[a.type] || a.type}, орб ${a.orb}° (${a.applying ? 'применяется' : 'расходится'})`;
       list.appendChild(li);
     });
   }
