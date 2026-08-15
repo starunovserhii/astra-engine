@@ -233,6 +233,46 @@
     border-top: 1px solid var(--border);
   }
   footer a { color: var(--accent); text-decoration: none; }
+
+  /* --- «Глубокая расшифровка» --- */
+  .interp-section { max-width: 1180px; margin: 0 auto 2rem; padding: 0 2rem; }
+  .interp-panel {
+    background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px;
+    padding: 1.6rem 1.8rem; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  .interp-panel h2 { font-family: Georgia, serif; color: var(--accent); font-size: 1.35rem; margin: 0 0 0.4rem; }
+  .interp-intro { color: var(--text-dim); font-size: 0.85rem; line-height: 1.6; margin: 0 0 1.3rem; max-width: 68ch; }
+  .interp-toolbar { display: flex; gap: 0.7rem; align-items: center; margin-bottom: 1.3rem; flex-wrap: wrap; }
+  .interp-btn {
+    background: var(--accent-dim); color: #0e0d12; border: none; border-radius: 6px;
+    padding: 0.6rem 1.1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  .interp-btn:hover { background: var(--accent); }
+  .interp-btn:disabled { opacity: 0.55; cursor: default; }
+  .interp-btn.secondary { background: var(--bg-panel-2); color: var(--text); border: 1px solid var(--border); }
+  .interp-btn.secondary:hover { border-color: var(--accent-dim); }
+  .interp-status { font-size: 0.78rem; color: var(--text-dim); }
+  #interp-body { display: none; }
+  #interp-body.active { display: block; }
+  .interp-block { border-top: 1px solid var(--border); padding-top: 1.15rem; margin-top: 1.15rem; }
+  .interp-block:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+  .interp-block h3 { font-family: Georgia, serif; font-size: 1.08rem; color: var(--text); margin: 0 0 0.35rem; }
+  .interp-basis { font-size: 0.72rem; color: var(--text-dim); font-style: italic; margin: 0 0 0.65rem; line-height: 1.4; }
+  .interp-block p { font-size: 0.92rem; line-height: 1.68; margin: 0 0 0.75rem; max-width: 74ch; }
+  .interp-block p:last-child { margin-bottom: 0; }
+  .interp-aspect-list, .interp-house-list { margin: 0; padding-left: 1.15rem; font-size: 0.88rem; line-height: 1.6; }
+  .interp-aspect-list li, .interp-house-list li { margin-bottom: 0.55rem; }
+  .interp-aspect-list li:last-child, .interp-house-list li:last-child { margin-bottom: 0; }
+  .interp-aspect-list b, .interp-house-list b { color: var(--text); font-weight: 600; }
+  .interp-disclaimer {
+    margin-top: 1.6rem; padding-top: 1rem; border-top: 1px dashed var(--border);
+    font-size: 0.74rem; color: var(--text-dim); line-height: 1.55; max-width: 74ch;
+  }
+  @media (max-width: 900px) {
+    .interp-section { padding: 0 1rem; }
+    .interp-panel { padding: 1.2rem 1.3rem; }
+  }
 </style>
 </head>
 <body>
@@ -339,16 +379,31 @@
     </div>
 
     <div class="panel">
-      <p class="warn-note" id="warn-note">Пример условный (не реальные данные клиента) — демонстрирует расчёт, а не интерпретацию. Движок отдаёт только числа и их источник; текстовые толкования — задача отдельного AI-слоя поверх этого API (см. README, §«Архитектура»).</p>
+      <p class="warn-note" id="warn-note">Пример условный (не реальные данные клиента) — демонстрирует расчёт. Движок (npm-пакет) отдаёт только числа и их источник; текстовый разбор — ниже, в разделе «Глубокая расшифровка» (правило-ориентированный слой поверх этих данных, без AI и бэкенда — см. README, §«Архитектура»).</p>
       <p class="warn-note" id="engine-warnings" style="display:none;"></p>
     </div>
   </aside>
 </main>
 
+<section class="interp-section">
+  <div class="interp-panel">
+    <h2>Глубокая расшифровка</h2>
+    <p class="interp-intro">Текстовый интерпретационный слой поверх точных данных карты выше: правило-ориентированный движок (без AI и без сервера — работает прямо в этой странице), который собирает связный разбор из положения планет по знакам и домам, достоинств и аспектов. У каждого раздела указано основание — конкретные элементы карты, на которых он построен.</p>
+    <div class="interp-toolbar">
+      <button id="interp-generate-btn" class="interp-btn" type="button">Сформировать расшифровку</button>
+      <button id="interp-pdf-btn" class="interp-btn secondary" type="button" style="display:none;">Скачать PDF</button>
+      <span id="interp-status" class="interp-status"></span>
+    </div>
+    <div id="interp-body"></div>
+    <p class="interp-disclaimer">Расшифровка — инструмент для размышления о своей карте, а не научно доказанный факт и не медицинская, юридическая или финансовая рекомендация. Формулировки намеренно вероятностные («часто», «склонность», «может проявляться») — карта показывает тенденции и потенциал, а не жёсткий сценарий.</p>
+  </div>
+</section>
+
 <footer>
   ASTRA Engine · MIT License · <a href="https://github.com/starunovserhii/astra-engine">github.com/starunovserhii/astra-engine</a>
 </footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.2.1/jspdf.umd.min.js"></script>
 <script src="astra-engine.bundle.js"></script>
 <script>
 let DATA = {"meta":{"label":"Пример натальной карты — демонстрация ASTRA Engine (условные данные, 15.06.1990, 08:30, Москва)","engineVersion":"0.1.0","houseSystemDefault":"placidus"},"points":[{"name":"Sun","longitude":83.9901,"sign":"Gemini","degreeInSign":23.99,"isRetrograde":false},{"name":"Moon","longitude":343.4135,"sign":"Pisces","degreeInSign":13.41,"isRetrograde":false},{"name":"Mercury","longitude":65.441,"sign":"Gemini","degreeInSign":5.44,"isRetrograde":false},{"name":"Venus","longitude":48.6059,"sign":"Taurus","degreeInSign":18.61,"isRetrograde":false},{"name":"Mars","longitude":10.9362,"sign":"Aries","degreeInSign":10.94,"isRetrograde":false},{"name":"Jupiter","longitude":105.8579,"sign":"Cancer","degreeInSign":15.86,"isRetrograde":false},{"name":"Saturn","longitude":294.0404,"sign":"Capricorn","degreeInSign":24.04,"isRetrograde":true},{"name":"Uranus","longitude":278.1696,"sign":"Capricorn","degreeInSign":8.17,"isRetrograde":true},{"name":"Neptune","longitude":283.7205,"sign":"Capricorn","degreeInSign":13.72,"isRetrograde":true},{"name":"Pluto","longitude":225.4051,"sign":"Scorpio","degreeInSign":15.41,"isRetrograde":true},{"name":"Chiron","longitude":43.216,"sign":"Taurus","degreeInSign":13.22,"isRetrograde":false},{"name":"MeanNode","longitude":309.702,"sign":"Aquarius","degreeInSign":9.7,"isRetrograde":true},{"name":"MeanSouthNode","longitude":129.702,"sign":"Leo","degreeInSign":9.7,"isRetrograde":true},{"name":"TrueNode","longitude":307.9205,"sign":"Aquarius","degreeInSign":7.92,"isRetrograde":true},{"name":"TrueSouthNode","longitude":127.9205,"sign":"Leo","degreeInSign":7.92,"isRetrograde":true},{"name":"MeanLilith","longitude":234.8729,"sign":"Scorpio","degreeInSign":24.87,"isRetrograde":false},{"name":"TrueLilith","longitude":231.1546,"sign":"Scorpio","degreeInSign":21.15,"isRetrograde":false},{"name":"Vertex","longitude":327.8151,"sign":"Aquarius","degreeInSign":27.82,"isRetrograde":false},{"name":"AntiVertex","longitude":147.8151,"sign":"Leo","degreeInSign":27.82,"isRetrograde":false},{"name":"PartOfFortune","longitude":65.1151,"sign":"Gemini","degreeInSign":5.12,"isRetrograde":false}],"dignities":{"Mercury":"rulership","Venus":"rulership","Mars":"rulership","Jupiter":"exaltation","Saturn":"rulership","Pluto":"rulership"},"aspects":[{"a":"Sun","b":"Saturn","type":"quincunx","orb":0.05,"applying":true},{"a":"Sun","b":"MeanNode","type":"sesquiquadrate","orb":0.71,"applying":true},{"a":"Sun","b":"MeanSouthNode","type":"semisquare","orb":0.71,"applying":true},{"a":"Sun","b":"TrueNode","type":"sesquiquadrate","orb":1.07,"applying":false},{"a":"Sun","b":"TrueSouthNode","type":"semisquare","orb":1.07,"applying":false},{"a":"Sun","b":"MeanLilith","type":"quincunx","orb":0.88,"applying":true},{"a":"Sun","b":"TrueLilith","type":"quincunx","orb":2.84,"applying":false},{"a":"Sun","b":"Vertex","type":"trine","orb":3.82,"applying":true},{"a":"Sun","b":"AntiVertex","type":"sextile","orb":3.82,"applying":true},{"a":"Moon","b":"Mercury","type":"square","orb":7.97,"applying":false},{"a":"Moon","b":"Venus","type":"sextile","orb":5.19,"applying":true},{"a":"Moon","b":"Mars","type":"semisextile","orb":2.48,"applying":false},{"a":"Moon","b":"Jupiter","type":"trine","orb":2.44,"applying":true},{"a":"Moon","b":"Uranus","type":"sextile","orb":5.24,"applying":false},{"a":"Moon","b":"Neptune","type":"sextile","orb":0.31,"applying":true},{"a":"Moon","b":"Pluto","type":"trine","orb":1.99,"applying":true},{"a":"Moon","b":"Chiron","type":"sextile","orb":0.2,"applying":false},{"a":"Moon","b":"MeanNode","type":"semisextile","orb":3.71,"applying":false},{"a":"Moon","b":"MeanSouthNode","type":"quincunx","orb":3.71,"applying":false},{"a":"Moon","b":"TrueLilith","type":"trine","orb":7.74,"applying":true},{"a":"Moon","b":"PartOfFortune","type":"square","orb":8.3,"applying":false},{"a":"Mercury","b":"Uranus","type":"quincunx","orb":2.73,"applying":true},{"a":"Mercury","b":"MeanNode","type":"trine","orb":4.26,"applying":true},{"a":"Mercury","b":"MeanSouthNode","type":"sextile","orb":4.26,"applying":true},{"a":"Mercury","b":"TrueNode","type":"trine","orb":2.48,"applying":true},{"a":"Mercury","b":"TrueSouthNode","type":"sextile","orb":2.48,"applying":true},{"a":"Mercury","b":"PartOfFortune","type":"conjunction","orb":0.33,"applying":false},{"a":"Venus","b":"Jupiter","type":"sextile","orb":2.75,"applying":false},{"a":"Venus","b":"Saturn","type":"trine","orb":5.43,"applying":true},{"a":"Venus","b":"Neptune","type":"trine","orb":4.89,"applying":false},{"a":"Venus","b":"Pluto","type":"opposition","orb":3.2,"applying":false},{"a":"Venus","b":"Chiron","type":"conjunction","orb":5.39,"applying":false},{"a":"Venus","b":"MeanLilith","type":"opposition","orb":6.27,"applying":true},{"a":"Venus","b":"TrueLilith","type":"opposition","orb":2.55,"applying":true},{"a":"Mars","b":"Jupiter","type":"square","orb":4.92,"applying":true},{"a":"Mars","b":"Uranus","type":"square","orb":2.77,"applying":false},{"a":"Mars","b":"Neptune","type":"square","orb":2.78,"applying":true},{"a":"Mars","b":"MeanNode","type":"sextile","orb":1.23,"applying":false},{"a":"Mars","b":"MeanSouthNode","type":"trine","orb":1.23,"applying":false},{"a":"Mars","b":"TrueNode","type":"sextile","orb":3.02,"applying":false},{"a":"Mars","b":"TrueSouthNode","type":"trine","orb":3.02,"applying":false},{"a":"Mars","b":"MeanLilith","type":"sesquiquadrate","orb":1.06,"applying":false},{"a":"Mars","b":"Vertex","type":"semisquare","orb":1.88,"applying":true},{"a":"Mars","b":"AntiVertex","type":"sesquiquadrate","orb":1.88,"applying":true},{"a":"Jupiter","b":"Uranus","type":"opposition","orb":7.69,"applying":false},{"a":"Jupiter","b":"Neptune","type":"opposition","orb":2.14,"applying":false},{"a":"Jupiter","b":"Pluto","type":"trine","orb":0.45,"applying":false},{"a":"Jupiter","b":"Chiron","type":"sextile","orb":2.64,"applying":false},{"a":"Jupiter","b":"TrueLilith","type":"trine","orb":5.3,"applying":true},{"a":"Saturn","b":"MeanLilith","type":"sextile","orb":0.83,"applying":false},{"a":"Saturn","b":"TrueLilith","type":"sextile","orb":2.89,"applying":true},{"a":"Uranus","b":"Neptune","type":"conjunction","orb":5.55,"applying":false},{"a":"Uranus","b":"Chiron","type":"trine","orb":5.05,"applying":false},{"a":"Uranus","b":"MeanNode","type":"semisextile","orb":1.53,"applying":true},{"a":"Uranus","b":"MeanSouthNode","type":"quincunx","orb":1.53,"applying":true},{"a":"Uranus","b":"TrueNode","type":"semisextile","orb":0.25,"applying":false},{"a":"Uranus","b":"TrueSouthNode","type":"quincunx","orb":0.25,"applying":false},{"a":"Uranus","b":"MeanLilith","type":"semisquare","orb":1.7,"applying":false},{"a":"Neptune","b":"Pluto","type":"sextile","orb":1.68,"applying":false},{"a":"Neptune","b":"Chiron","type":"trine","orb":0.5,"applying":true},{"a":"Neptune","b":"Vertex","type":"semisquare","orb":0.91,"applying":true},{"a":"Neptune","b":"AntiVertex","type":"sesquiquadrate","orb":0.91,"applying":true},{"a":"Pluto","b":"Chiron","type":"opposition","orb":2.19,"applying":true},{"a":"Pluto","b":"MeanNode","type":"square","orb":5.7,"applying":false},{"a":"Pluto","b":"MeanSouthNode","type":"square","orb":5.7,"applying":false},{"a":"Pluto","b":"TrueLilith","type":"conjunction","orb":5.75,"applying":false},{"a":"Chiron","b":"MeanNode","type":"square","orb":3.51,"applying":false},{"a":"Chiron","b":"MeanSouthNode","type":"square","orb":3.51,"applying":false},{"a":"Chiron","b":"TrueNode","type":"square","orb":5.3,"applying":false},{"a":"Chiron","b":"TrueSouthNode","type":"square","orb":5.3,"applying":false},{"a":"Chiron","b":"TrueLilith","type":"opposition","orb":7.94,"applying":false},{"a":"MeanNode","b":"MeanSouthNode","type":"opposition","orb":0,"applying":false},{"a":"MeanNode","b":"TrueNode","type":"conjunction","orb":1.78,"applying":true},{"a":"MeanNode","b":"TrueSouthNode","type":"opposition","orb":1.78,"applying":true},{"a":"MeanNode","b":"PartOfFortune","type":"trine","orb":4.59,"applying":true},{"a":"MeanSouthNode","b":"TrueNode","type":"opposition","orb":1.78,"applying":true},{"a":"MeanSouthNode","b":"TrueSouthNode","type":"conjunction","orb":1.78,"applying":true},{"a":"MeanSouthNode","b":"PartOfFortune","type":"sextile","orb":4.59,"applying":true},{"a":"TrueNode","b":"TrueSouthNode","type":"opposition","orb":0,"applying":false},{"a":"TrueNode","b":"PartOfFortune","type":"trine","orb":2.81,"applying":true},{"a":"TrueSouthNode","b":"PartOfFortune","type":"sextile","orb":2.81,"applying":true},{"a":"MeanLilith","b":"TrueLilith","type":"conjunction","orb":3.72,"applying":true},{"a":"MeanLilith","b":"Vertex","type":"square","orb":2.94,"applying":true},{"a":"MeanLilith","b":"AntiVertex","type":"square","orb":2.94,"applying":true},{"a":"TrueLilith","b":"Vertex","type":"square","orb":6.66,"applying":true},{"a":"TrueLilith","b":"AntiVertex","type":"square","orb":6.66,"applying":true},{"a":"Vertex","b":"AntiVertex","type":"opposition","orb":0,"applying":false}],"housesBySystem":{"placidus":{"cusps":[165.6917,186.4906,214.1813,250.1173,289.0991,320.9835,345.6917,6.4906,34.1813,70.1173,109.0991,140.9835],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"wholeSign":{"cusps":[150,180,210,240,270,300,330,0,30,60,90,120],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"equal":{"cusps":[165.6917,195.6917,225.6917,255.6917,285.6917,315.6917,345.6917,15.6917,45.6917,75.6917,105.6917,135.6917],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"koch":{"cusps":[165.6917,193.7004,221.4863,250.1173,289.2153,317.9103,345.6917,13.7004,41.4863,70.1173,109.2153,137.9103],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"regiomontanus":{"cusps":[165.6917,185.9604,211.6322,250.1173,293.3777,323.9902,345.6917,5.9604,31.6322,70.1173,113.3777,143.9902],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"campanus":{"cusps":[165.6917,198.2422,225.2669,250.1173,277.1009,309.5936,345.6917,18.2422,45.2669,70.1173,97.1009,129.5936],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"porphyry":{"cusps":[165.6917,193.8336,221.9754,250.1173,281.9754,313.8336,345.6917,13.8336,41.9754,70.1173,101.9754,133.8336],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"alcabitius":{"cusps":[165.6917,183.1864,218.0738,250.1173,280.3584,311.5887,345.6917,3.1864,38.0738,70.1173,100.3584,131.5887],"ascendant":165.6917,"midheaven":70.1173,"reliable":true}},"pointHousesBySystem":{"placidus":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":8,"Jupiter":10,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"wholeSign":{"Sun":10,"Moon":7,"Mercury":10,"Venus":9,"Mars":8,"Jupiter":11,"Saturn":5,"Uranus":5,"Neptune":5,"Pluto":3,"Chiron":9,"MeanNode":6,"MeanSouthNode":12,"TrueNode":6,"TrueSouthNode":12,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":10},"equal":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":11,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":2,"Chiron":8,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"koch":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":10,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"regiomontanus":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":8,"Jupiter":10,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"campanus":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":11,"Saturn":5,"Uranus":5,"Neptune":5,"Pluto":3,"Chiron":8,"MeanNode":6,"MeanSouthNode":12,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"porphyry":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":11,"Saturn":5,"Uranus":4,"Neptune":5,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"alcabitius":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":8,"Jupiter":11,"Saturn":5,"Uranus":4,"Neptune":5,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9}}};
@@ -394,6 +449,388 @@ const ASPECT_COLOR = {
   trine: '#8fa9c0', sextile: '#8fa9c0',
   semisextile: '#5c596a', semisquare: '#5c596a', sesquiquadrate: '#5c596a', quincunx: '#5c596a',
 };
+
+// ============================================================================
+// ГЛУБОКАЯ РАСШИФРОВКА — текстовый интерпретационный слой (INTERPRETATION LAYER)
+// ============================================================================
+// Работает полностью на клиенте, без бэкенда и без AI: правило-ориентированный
+// движок, который комбинирует банки данных (планета × знак × дом × аспект ×
+// достоинство) в связный текст на основе уже посчитанных движком точных данных
+// карты (DATA.points/houses/aspects/dignities). Это и есть архитектурный слой
+// ASTROLOGICAL ENGINE -> INTERPRETATION из §8/§11 брифа ASTRA — реализован как
+// текстовый движок, а не LLM: сайт статический (GitHub Pages, без сервера), а
+// LLM-слой поверх этого API можно добавить позже отдельным шагом, не меняя
+// структуру данных, которую этот блок уже использует.
+//
+// Принципы (см. §24 брифа — AI SAFETY/QUALITY, применяем и к текстовому движку):
+//  - вероятностный, рефлексивный язык ("часто", "склонность", "может
+//    проявляться") вместо категоричных предсказаний;
+//  - никаких медицинских/юридических/финансовых утверждений;
+//  - у каждого раздела — видимое основание ("на основе: Солнце в Тельце,
+//    10 дом"), чтобы было прозрачно, откуда взялся вывод (см. §24, "Why am I
+//    seeing this?").
+
+// --- знаки: стихия, модальность, управитель, ключевые формулировки ---
+const ZODIAC_TRAITS = {
+  Aries: { element: 'огонь', modality: 'кардинальный', ruler: 'Марс',
+    core: 'инициативность, прямоту и готовность действовать первым, не дожидаясь идеальных условий',
+    strength: 'смелость начинать и решительность в спорных ситуациях',
+    shadow: 'нетерпеливость и склонность вспыхивать, не додумав ситуацию до конца' },
+  Taurus: { element: 'земля', modality: 'фиксированный', ruler: 'Венера',
+    core: 'устойчивость, чувственность и тягу к надёжности и материальной опоре',
+    strength: 'терпение, умение доводить начатое до результата и создавать вокруг себя комфорт',
+    shadow: 'упрямство и сопротивление переменам даже тогда, когда они уже назрели' },
+  Gemini: { element: 'воздух', modality: 'мутабельный', ruler: 'Меркурий',
+    core: 'любопытство, живой ум и потребность в постоянном обмене информацией',
+    strength: 'гибкость мышления, лёгкость в общении и способность видеть вопрос с нескольких сторон',
+    shadow: 'разбросанность внимания и склонность браться за многое, не доводя до глубины' },
+  Cancer: { element: 'вода', modality: 'кардинальный', ruler: 'Луна',
+    core: 'чувствительность, заботу о близких и потребность в эмоциональной безопасности',
+    strength: 'эмпатию, преданность и умение создавать тёплую, защищённую атмосферу',
+    shadow: 'обидчивость и склонность закрываться в себе при малейшей угрозе' },
+  Leo: { element: 'огонь', modality: 'фиксированный', ruler: 'Солнце',
+    core: 'потребность быть увиденным, творческую щедрость и естественное лидерство',
+    strength: 'уверенность, тёплую харизму и способность вдохновлять окружающих',
+    shadow: 'уязвимость к критике и склонность требовать больше внимания, чем ситуация предполагает' },
+  Virgo: { element: 'земля', modality: 'мутабельный', ruler: 'Меркурий',
+    core: 'внимание к деталям, практичность и стремление довести всё до рабочего состояния',
+    strength: 'аналитический ум, надёжность и умение находить и чинить то, что не работает',
+    shadow: 'самокритичность и перфекционизм, который иногда мешает просто закончить и отпустить' },
+  Libra: { element: 'воздух', modality: 'кардинальный', ruler: 'Венера',
+    core: 'стремление к балансу, эстетике и гармоничным отношениям с другими',
+    strength: 'дипломатичность, чувство меры и способность видеть чужую точку зрения',
+    shadow: 'нерешительность и склонность подстраиваться под других в ущерб своим интересам' },
+  Scorpio: { element: 'вода', modality: 'фиксированный', ruler: 'Плутон (традиционно — Марс)',
+    core: 'глубину, интенсивность и потребность видеть суть вещей, а не их фасад',
+    strength: 'силу воли, психологическую проницательность и способность проходить через кризисы и трансформироваться',
+    shadow: 'склонность к контролю и недоверию там, где можно было бы просто открыться' },
+  Sagittarius: { element: 'огонь', modality: 'мутабельный', ruler: 'Юпитер',
+    core: 'тягу к смыслу, свободе и расширению горизонтов — географических или мировоззренческих',
+    strength: 'оптимизм, широту взглядов и способность вдохновлять верой в лучшее',
+    shadow: 'склонность обещать больше, чем можешь выполнить, и избегать неудобных деталей' },
+  Capricorn: { element: 'земля', modality: 'кардинальный', ruler: 'Сатурн',
+    core: 'дисциплину, стратегическое мышление и готовность работать на долгий результат',
+    strength: 'ответственность, выдержку и умение выстраивать прочные структуры — карьерные и личные',
+    shadow: 'излишнюю суровость к себе и другим, трудности с тем, чтобы просто расслабиться' },
+  Aquarius: { element: 'воздух', modality: 'фиксированный', ruler: 'Уран (традиционно — Сатурн)',
+    core: 'независимость мышления, интерес к необычному и ориентацию на группу, а не только на себя',
+    strength: 'оригинальность, объективность и способность видеть систему целиком, а не только свой угол',
+    shadow: 'эмоциональную отстранённость и упрямое сопротивление чужому мнению из принципа' },
+  Pisces: { element: 'вода', modality: 'мутабельный', ruler: 'Нептун (традиционно — Юпитер)',
+    core: 'чувствительность к тонким состояниям, воображение и способность растворяться в чём-то большем',
+    strength: 'эмпатию, творческую интуицию и умение сочувствовать без осуждения',
+    shadow: 'склонность убегать от трудной реальности в мечты или жертвенность' },
+};
+
+// --- дома: сфера жизни, к которой относится всё, что в них попадает ---
+const HOUSE_THEME = {
+  1: { title: 'дом личности и самопрезентации', text: 'то, как ты выглядишь для мира с первого взгляда, и с какой энергией входишь в новую ситуацию' },
+  2: { title: 'дом ресурсов и ценностей', text: 'отношения с деньгами, имуществом и вообще с тем, что ты считаешь по-настоящему своим' },
+  3: { title: 'дом мышления и связей', text: 'повседневное общение, учёбу, короткие поездки и то, как ты формулируешь мысли' },
+  4: { title: 'дом дома и корней', text: 'семью, детство, ощущение внутренней опоры и то место, куда хочется возвращаться' },
+  5: { title: 'дом творчества и удовольствия', text: 'самовыражение, романтику, детей и всё, что делается не по необходимости, а из радости' },
+  6: { title: 'дом работы и повседневных практик', text: 'рабочую рутину, здоровье как систему привычек и заботу о теле' },
+  7: { title: 'дом партнёрства', text: 'близкие союзы один на один — браки, деловое партнёрство и то, что ты ищешь в другом человеке' },
+  8: { title: 'дом трансформации и общих ресурсов', text: 'глубокие кризисы и перерождения, интимность, а также деньги и ресурсы, связанные с другими людьми' },
+  9: { title: 'дом смысла и расширения', text: 'мировоззрение, дальние путешествия, высшее образование и поиск более широкой картины мира' },
+  10: { title: 'дом карьеры и статуса', text: 'профессиональный путь, репутацию и то, каким тебя видит общество' },
+  11: { title: 'дом сообществ и целей', text: 'дружеские круги, единомышленников и долгосрочные цели, которые больше личных интересов' },
+  12: { title: 'дом уединения и подсознания', text: 'внутреннюю работу, отдых от внешнего мира и то, что обычно остаётся за кадром' },
+};
+
+// --- достоинства: модификатор к тексту про планету в знаке ---
+const DIGNITY_MODIFIER = {
+  rulership: (name) => `${name} находится в своей обители — эта тема проявляется в тебе особенно естественно, почти без внутреннего сопротивления.`,
+  exaltation: (name) => `${name} здесь в экзальтации — качества этой планеты раскрываются ярко, иногда даже подчёркнуто заметно для окружающих.`,
+  detriment: (name) => `${name} здесь в изгнании — эта тема даётся не так гладко: скорее всего, тебе приходится сознательно нарабатывать то, что другим достаётся легче.`,
+  fall: (name) => `${name} здесь в падении — качества этой планеты проявляются не сразу и часто через кризисы, но именно поэтому, будучи осознанными, они особенно ценны.`,
+};
+
+// --- планеты: домен + функция, собирающая абзац по знаку/дому/ретроградности ---
+const PLANET_INTERPRETERS = {
+  Sun: {
+    domain: 'ядро личности и жизненная энергия',
+    paragraph: (s) => `Солнце показывает ядро личности — то, вокруг чего строится ощущение "я". У тебя оно в знаке, который проявляется через ${s.core}. Сильная сторона такого Солнца — ${s.strength}; уязвимое место, с которым стоит работать осознанно, — ${s.shadow}.`,
+  },
+  Moon: {
+    domain: 'эмоциональный мир и потребность в безопасности',
+    paragraph: (s) => `Луна отвечает за эмоциональный мир — то, что даёт ощущение внутренней опоры и как ты реагируешь неосознанно, "на автомате". В твоей карте это проявляется через ${s.core}. В спокойном состоянии это даёт ${s.strength}; под стрессом эмоции чаще выражаются как ${s.shadow}.`,
+  },
+  Mercury: {
+    domain: 'мышление и стиль общения',
+    paragraph: (s) => `Меркурий показывает, как устроено мышление и как ты обмениваешься информацией с миром — через ${s.core}. Это даёт ${s.strength}, а в перегруженном состоянии мышление может скатываться в ${s.shadow}.`,
+  },
+  Venus: {
+    domain: 'привязанности, эстетика и то, что притягивает',
+    paragraph: (s) => `Венера показывает, что тебя притягивает — в людях, в эстетике, в отношениях — через ${s.core}. В близких связях это раскрывается как ${s.strength}; теневая сторона той же тенденции — ${s.shadow}.`,
+  },
+  Mars: {
+    domain: 'воля, желание и способ действовать',
+    paragraph: (s) => `Марс показывает, как ты действуешь, отстаиваешь своё и выражаешь желание, — через ${s.core}. Это даёт ${s.strength}; неосознанно эта же энергия может превращаться в ${s.shadow}.`,
+  },
+  Jupiter: {
+    domain: 'рост, удача и то, где легче всего расширяться',
+    paragraph: (s) => `Юпитер показывает, где легче всего расти, находить возможности и чувствовать доверие к жизни, — через ${s.core}. Здесь у тебя естественный ресурс: ${s.strength}. Обратная сторона такого изобилия — ${s.shadow}.`,
+  },
+  Saturn: {
+    domain: 'дисциплина, ограничения и зона взросления',
+    paragraph: (s) => `Сатурн показывает, где приходится взрослеть через структуру, ответственность и время, а не через лёгкость, — через ${s.core}. Если пройти этот урок осознанно, он даёт ${s.strength}. Пока урок не пройден, чаще ощущается как ${s.shadow}.`,
+  },
+  Uranus: {
+    domain: 'независимость и потребность в переменах',
+    paragraph: (s) => `Уран в твоей карте показывает, где ты стремишься к свободе и неожиданным переменам, — через ${s.core}. Это поколенческая планета (её знак разделяют ровесники на протяжении многих лет), но по дому, в котором она стоит, видно, в какой сфере твоей личной жизни эта энергия проявляется заметнее всего.`,
+  },
+  Neptune: {
+    domain: 'воображение, интуиция и растворение границ',
+    paragraph: (s) => `Нептун показывает область воображения, вдохновения и тонкой чувствительности — через ${s.core}. Как и Уран, это медленная, поколенческая планета; персональнее всего она звучит через дом, в котором находится.`,
+  },
+  Pluto: {
+    domain: 'глубинная трансформация и власть',
+    paragraph: (s) => `Плутон показывает область, где происходят самые глубокие, необратимые трансформации, — через ${s.core}. Это самая медленная из планет в карте; её персональное звучание раскрывается прежде всего через дом.`,
+  },
+};
+
+// --- вспомогательные точки: короче, без развёрнутого разбора по знаку ---
+const MINOR_POINT_NOTE = {
+  MeanNode: 'Северный узел указывает направление роста в этой жизни — то, что не всегда даётся легко, но приносит наибольшее ощущение смысла по мере освоения.',
+  TrueNode: 'Северный узел указывает направление роста в этой жизни — то, что не всегда даётся легко, но приносит наибольшее ощущение смысла по мере освоения.',
+  MeanSouthNode: 'Южный узел — зона уже наработанного опыта (в том числе полученного не в этой конкретной ситуации): естественные, но иногда чрезмерно привычные стратегии, из которых стоит время от времени сознательно выходить.',
+  TrueSouthNode: 'Южный узел — зона уже наработанного опыта: естественные, но иногда чрезмерно привычные стратегии, из которых стоит время от времени сознательно выходить.',
+  MeanLilith: 'Лилит показывает область, где сложно соответствовать чужим ожиданиям и где рано или поздно приходится заявить о себе без извинений.',
+  TrueLilith: 'Лилит показывает область, где сложно соответствовать чужим ожиданиям и где рано или поздно приходится заявить о себе без извинений.',
+  PartOfFortune: 'Парс Фортуны — точка, связанная с ощущением везения и естественного благополучия: там, где усилия легче всего конвертируются в результат.',
+  Vertex: 'Вертекс иногда называют точкой "судьбоносных" встреч и поворотов — она чаще активируется внешними обстоятельствами, чем сознательным усилием.',
+};
+
+// --- аспекты: тон + связующая формулировка ---
+const ASPECT_FRAME = {
+  conjunction: { tone: 'сплав', text: (a, b) => `${a} и ${b} слиты воедино: эти две темы работают практически как одна сила, усиливая друг друга — но иногда их трудно отделить друг от друга даже в собственном восприятии.` },
+  opposition: { tone: 'напряжение', text: (a, b) => `${a} и ${b} находятся в противостоянии — это ощущается как внутренний перетягивающий канат между двумя потребностями. Задача не в том, чтобы одна сторона "победила", а в том, чтобы найти между ними подвижный баланс.` },
+  square: { tone: 'напряжение', text: (a, b) => `${a} и ${b} образуют квадрат — источник внутреннего трения и мотивации одновременно. Именно через дискомфорт этого сочетания чаще всего происходит рост, если не избегать его.` },
+  trine: { tone: 'гармония', text: (a, b) => `${a} и ${b} образуют трин — это работает легко, почти без усилий, как встроенный талант. Риск такой лёгкости в том, что ресурс можно недооценить и не развивать дальше.` },
+  sextile: { tone: 'гармония', text: (a, b) => `${a} и ${b} образуют секстиль — это возможность, которая раскрывается при небольшом сознательном усилии: не автоматический дар, но и не борьба.` },
+  quincunx: { tone: 'нестыковка', text: (a, b) => `${a} и ${b} образуют квинконс — эти две темы плохо "разговаривают" друг с другом напрямую и требуют постоянной подстройки, часто методом проб и ошибок.` },
+  semisextile: { tone: 'тонкая связь', text: (a, b) => `${a} и ${b} образуют полусекстиль — мягкая, не всегда осознаваемая связь, которая работает на заднем плане.` },
+  semisquare: { tone: 'лёгкое трение', text: (a, b) => `${a} и ${b} образуют полуквадрат — источник негромкого, но постоянного раздражения, которое стоит заметить, а не подавлять.` },
+  sesquiquadrate: { tone: 'лёгкое трение', text: (a, b) => `${a} и ${b} образуют полутораквадрат — похожая на полуквадрат динамика трения, часто проявляющаяся через внешние обстоятельства, а не напрямую.` },
+};
+
+// долгота -> знак + градус внутри знака (для точек, которых нет в DATA.points, напр. Асцендента/MC)
+function lonToSignDeg(lon) {
+  const norm = ((lon % 360) + 360) % 360;
+  const idx = Math.floor(norm / 30);
+  return { sign: SIGNS[idx], degreeInSign: Number((norm - idx * 30).toFixed(2)) };
+}
+
+function houseBasis(houseNum) {
+  return houseNum ? ` (${houseNum}-й дом — ${HOUSE_THEME[houseNum].title})` : '';
+}
+
+// Абзац "планета в знаке [в доме]" — ядро расшифровки
+function describePlanet(planetName, sign, houseNum, dignity, retro) {
+  const interp = PLANET_INTERPRETERS[planetName];
+  const nameRu = PLANET_NAME_RU[planetName] || planetName;
+  const signRu = SIGN_NAME_RU[sign] || sign;
+  const s = ZODIAC_TRAITS[sign];
+  let text;
+  if (interp) {
+    text = interp.paragraph(s);
+  } else if (MINOR_POINT_NOTE[planetName]) {
+    text = MINOR_POINT_NOTE[planetName];
+  } else {
+    text = `${nameRu} в ${signRu} привносит в карту качества этого знака: ${s.core}.`;
+  }
+  if (houseNum && HOUSE_THEME[houseNum]) {
+    text += ` Сильнее всего это заметно в сфере, за которую отвечает ${houseNum}-й дом — ${HOUSE_THEME[houseNum].title} (${HOUSE_THEME[houseNum].text}).`;
+  }
+  if (dignity && DIGNITY_MODIFIER[dignity]) {
+    text += ' ' + DIGNITY_MODIFIER[dignity](nameRu);
+  }
+  if (retro) {
+    text += ` Ретроградность ${nameRu.toLowerCase()} добавляет оттенок обращённости внутрь: энергия этой планеты чаще разворачивается не наружу сразу, а через переосмысление, прежде чем проявиться вовне.`;
+  }
+  return text;
+}
+
+function basisLine(...parts) {
+  return 'На основе: ' + parts.filter(Boolean).join(', ') + '.';
+}
+
+// Собирает объект {title, basis, html} для каждого раздела расшифровки.
+// pointHouses — DATA.pointHousesBySystem[currentSystem]; houses — DATA.housesBySystem[currentSystem]
+function buildInterpretation(data, pointHouses, houses) {
+  const byName = {};
+  data.points.forEach((p) => { byName[p.name] = p; });
+  const get = (name) => byName[name];
+  const houseOf = (name) => pointHouses ? pointHouses[name] : undefined;
+  const dignityOf = (name) => data.dignities[name];
+  const sections = [];
+
+  const timeKnown = data.meta.timeKnown !== false;
+
+  // --- 1. Большая тройка ---
+  const sun = get('Sun'), moon = get('Moon');
+  let ascText = '';
+  let ascSign = null;
+  if (timeKnown && houses) {
+    const asc = lonToSignDeg(houses.ascendant);
+    ascSign = asc.sign;
+    const s = ZODIAC_TRAITS[asc.sign];
+    ascText = `Асцендент (то, как ты предъявляешь себя миру в первые минуты знакомства, и сама "точка входа" в любую новую ситуацию) — в ${SIGN_NAME_RU[asc.sign]}. Это добавляет к образу ${s.core}, а первое впечатление о тебе часто ассоциируется с ${s.strength}.`;
+  } else {
+    ascText = 'Точное время рождения неизвестно, поэтому Асцендент и дома не рассчитаны — это не ошибка, а честное ограничение метода (см. предупреждение движка выше). Ниже показана только часть карты, не зависящая от времени суток.';
+  }
+  if (sun && moon) {
+    sections.push({
+      title: 'Большая Тройка',
+      basis: basisLine(
+        `Солнце в ${SIGN_NAME_RU[sun.sign]}${houseBasis(houseOf('Sun'))}`,
+        `Луна в ${SIGN_NAME_RU[moon.sign]}${houseBasis(houseOf('Moon'))}`,
+        ascSign ? `Асцендент в ${SIGN_NAME_RU[ascSign]}` : null
+      ),
+      html: `<p>${describePlanet('Sun', sun.sign, houseOf('Sun'), dignityOf('Sun'), sun.isRetrograde)}</p>` +
+            `<p>${describePlanet('Moon', moon.sign, houseOf('Moon'), dignityOf('Moon'), moon.isRetrograde)}</p>` +
+            `<p>${ascText}</p>`,
+    });
+  }
+
+  // --- 2. Личность и мышление (Sun уже раскрыт выше — здесь Mercury) ---
+  const merc = get('Mercury');
+  if (merc) {
+    sections.push({
+      title: 'Мышление и стиль общения',
+      basis: basisLine(`Меркурий в ${SIGN_NAME_RU[merc.sign]}${houseBasis(houseOf('Mercury'))}`),
+      html: `<p>${describePlanet('Mercury', merc.sign, houseOf('Mercury'), dignityOf('Mercury'), merc.isRetrograde)}</p>`,
+    });
+  }
+
+  // --- 3. Эмоциональный профиль (Moon уже раскрыта в тройке — доп. деталей не дублируем) ---
+
+  // --- 4. Отношения и любовь ---
+  const venus = get('Venus'), mars = get('Mars');
+  if (venus || mars) {
+    let html = '';
+    if (venus) html += `<p>${describePlanet('Venus', venus.sign, houseOf('Venus'), dignityOf('Venus'), venus.isRetrograde)}</p>`;
+    if (mars) html += `<p>${describePlanet('Mars', mars.sign, houseOf('Mars'), dignityOf('Mars'), mars.isRetrograde)}</p>`;
+    const seventhHouse = timeKnown ? '<p>' + `7-й дом (${HOUSE_THEME[7].title}) показывает, каким партнёрство видится на уровне жизненной темы — ${HOUSE_THEME[7].text}. Планеты в этом доме и его управитель добавляют красок к тому, что уже видно по Венере и Марсу — их можно рассмотреть отдельно на колесе выше.` + '</p>' : '';
+    sections.push({
+      title: 'Отношения и любовь',
+      basis: basisLine(venus ? `Венера в ${SIGN_NAME_RU[venus.sign]}${houseBasis(houseOf('Venus'))}` : null, mars ? `Марс в ${SIGN_NAME_RU[mars.sign]}${houseBasis(houseOf('Mars'))}` : null),
+      html: html + seventhHouse,
+    });
+  }
+
+  // --- 5. Карьера и предназначение ---
+  const saturn = get('Saturn');
+  if (timeKnown && houses) {
+    const mc = lonToSignDeg(houses.midheaven);
+    const mcS = ZODIAC_TRAITS[mc.sign];
+    let html = `<p>Середина неба (MC) в ${SIGN_NAME_RU[mc.sign]} — вершина карты, показывающая профессиональный путь и то, каким тебя видит общество со стороны. Здесь это связано с ${mcS.core}, а естественный ресурс на этом пути — ${mcS.strength}.</p>`;
+    if (saturn) html += `<p>${describePlanet('Saturn', saturn.sign, houseOf('Saturn'), dignityOf('Saturn'), saturn.isRetrograde)}</p>`;
+    sections.push({
+      title: 'Карьера и предназначение',
+      basis: basisLine(`MC в ${SIGN_NAME_RU[mc.sign]}`, saturn ? `Сатурн в ${SIGN_NAME_RU[saturn.sign]}${houseBasis(houseOf('Saturn'))}` : null),
+      html,
+    });
+  } else if (saturn) {
+    sections.push({
+      title: 'Карьера и предназначение',
+      basis: basisLine(`Сатурн в ${SIGN_NAME_RU[saturn.sign]}`),
+      html: `<p>${describePlanet('Saturn', saturn.sign, null, dignityOf('Saturn'), saturn.isRetrograde)}</p><p>Без точного времени рождения MC и 10-й дом не рассчитаны — эта часть карты завязана на время суток.</p>`,
+    });
+  }
+
+  // --- 6. Деньги и ресурсы ---
+  const jupiter = get('Jupiter');
+  {
+    let html = '';
+    if (venus) html += `<p>Венера, помимо отношений, отвечает и за то, что приносит ощущение ценности и удовольствия от обладания — включая деньги и вещи.</p>`;
+    if (jupiter) html += `<p>${describePlanet('Jupiter', jupiter.sign, houseOf('Jupiter'), dignityOf('Jupiter'), jupiter.isRetrograde)}</p>`;
+    if (timeKnown) html += `<p>2-й дом (${HOUSE_THEME[2].title}) — ${HOUSE_THEME[2].text}. Посмотри, какие планеты в него попадают на колесе: они прямо описывают твой стиль обращения с ресурсами.</p>`;
+    if (html) {
+      sections.push({
+        title: 'Деньги и ресурсы',
+        basis: basisLine(jupiter ? `Юпитер в ${SIGN_NAME_RU[jupiter.sign]}${houseBasis(houseOf('Jupiter'))}` : null),
+        html,
+      });
+    }
+  }
+
+  // --- 7. Таланты и сильные стороны ---
+  {
+    const strong = data.points.filter((p) => dignityOf(p.name) === 'rulership' || dignityOf(p.name) === 'exaltation');
+    const goodAspects = data.aspects.filter((a) => a.type === 'trine' || a.type === 'sextile');
+    let html = '';
+    if (strong.length) {
+      html += '<p>' + strong.map((p) => `${PLANET_NAME_RU[p.name] || p.name} в ${SIGN_NAME_RU[p.sign]}`).join(', ') +
+        ' — планеты в своей обители или экзальтации: это темы, которые в твоей карте раскрываются с наименьшим сопротивлением и на которые стоит опираться в первую очередь.</p>';
+    }
+    if (goodAspects.length) {
+      const top = goodAspects.slice(0, 3);
+      html += '<p>Гармоничные аспекты (трины и секстили) между ' +
+        top.map((a) => `${PLANET_NAME_RU[a.a] || a.a} и ${PLANET_NAME_RU[a.b] || a.b}`).join('; ') +
+        ' — это встроенные ресурсы, которые работают почти без усилий, если их вообще заметить и начать использовать осознанно.</p>';
+    }
+    if (!html) {
+      html = '<p>Явных сверхсильных акцентов (планет в обители/экзальтации или большого числа гармоничных аспектов) в этой карте немного — это не недостаток: сила такой карты чаще в балансе, а не в одном ярком таланте.</p>';
+    }
+    sections.push({ title: 'Таланты и сильные стороны', basis: 'На основе: достоинства планет и гармоничные аспекты (трин, секстиль) во всей карте.', html });
+  }
+
+  // --- 8. Вызовы и точки роста ---
+  {
+    const weak = data.points.filter((p) => dignityOf(p.name) === 'detriment' || dignityOf(p.name) === 'fall');
+    const hardAspects = data.aspects.filter((a) => a.type === 'square' || a.type === 'opposition');
+    let html = '';
+    if (weak.length) {
+      html += '<p>' + weak.map((p) => `${PLANET_NAME_RU[p.name] || p.name} в ${SIGN_NAME_RU[p.sign]}`).join(', ') +
+        ' — планеты в изгнании или падении: темы, которые не даются по умолчанию и требуют сознательной, регулярной работы. Именно осознанная работа с ними обычно даёт наибольший личностный рост.</p>';
+    }
+    if (hardAspects.length) {
+      const top = hardAspects.slice(0, 3);
+      html += '<p>Напряжённые аспекты (квадраты и оппозиции) между ' +
+        top.map((a) => `${PLANET_NAME_RU[a.a] || a.a} и ${PLANET_NAME_RU[a.b] || a.b}`).join('; ') +
+        ' — источники внутреннего трения. Важно: напряжённый аспект — это не "плохая" карта, а встроенный двигатель развития; избегание этой темы обычно даёт больше дискомфорта, чем прямая работа с ней.</p>';
+    }
+    if (!html) {
+      html = '<p>Явных острых конфликтов (планет в изгнании/падении или большого числа напряжённых аспектов) в этой карте немного — рост здесь скорее идёт через мягкое, постепенное развитие уже сильных сторон, а не через преодоление кризисов.</p>';
+    }
+    sections.push({ title: 'Вызовы и точки роста', basis: 'На основе: достоинства планет и напряжённые аспекты (квадрат, оппозиция) во всей карте.', html });
+  }
+
+  // --- 9. Ключевые аспекты (полный список, отсортированный по орбу — точнее орб, сильнее аспект) ---
+  if (data.aspects.length) {
+    const sorted = [...data.aspects].sort((a, b) => a.orb - b.orb).slice(0, 8);
+    const items = sorted.map((a) => {
+      const frame = ASPECT_FRAME[a.type];
+      const nameA = PLANET_NAME_RU[a.a] || a.a, nameB = PLANET_NAME_RU[a.b] || a.b;
+      const text = frame ? frame.text(nameA, nameB) : `${nameA} и ${nameB} образуют ${ASPECT_NAME_RU[a.type] || a.type}.`;
+      return `<li><b>${nameA} ${ASPECT_NAME_RU[a.type] || a.type} ${nameB}</b> (орб ${a.orb}°, ${a.applying ? 'применяется' : 'расходится'}) — ${text}</li>`;
+    });
+    sections.push({
+      title: 'Ключевые аспекты',
+      basis: 'На основе: 8 самых точных (по минимальному орбу) аспектов карты — чем точнее орб, тем сильнее звучит аспект.',
+      html: `<ul class="interp-aspect-list">${items.join('')}</ul>`,
+    });
+  }
+
+  // --- 10. Дома — обзор (только если известно время) ---
+  if (timeKnown && pointHouses) {
+    const rows = [];
+    for (let h = 1; h <= 12; h++) {
+      const occupants = data.points.filter((p) => pointHouses[p.name] === h && !HIDDEN_FROM_WHEEL.has(p.name));
+      const names = occupants.map((p) => `${PLANET_GLYPH[p.name] || ''} ${PLANET_NAME_RU[p.name] || p.name}`).join(', ');
+      rows.push(`<li><b>${h}. ${HOUSE_THEME[h].title[0].toUpperCase() + HOUSE_THEME[h].title.slice(1)}</b>${names ? ' — ' + names : ' — пусто (тема дома от этого не менее значима, просто не акцентирована конкретной планетой)'}</li>`);
+    }
+    sections.push({
+      title: 'Дома — обзор',
+      basis: 'На основе: распределение всех точек карты по 12 домам (текущая система: см. настройки выше).',
+      html: `<ul class="interp-house-list">${rows.join('')}</ul>`,
+    });
+  }
+
+  return sections;
+}
 
 // --- база городов для формы (координаты + IANA-таймзона) ---
 // Координаты — центр города, точность достаточна для расчёта карты
@@ -9418,7 +9855,7 @@ document.getElementById('calc-btn').addEventListener('click', () => {
     selectedPoint = null;
 
     const warnEl = document.getElementById('warn-note');
-    warnEl.textContent = 'Это настоящий расчёт по введённым данным (не пример) — движок отдаёт только числа и их источник; текстовые толкования — задача отдельного AI-слоя поверх этого API (см. README, §«Архитектура»).';
+    warnEl.textContent = 'Это настоящий расчёт по введённым данным (не пример) — движок отдаёт только числа и их источник; текстовый разбор — в разделе «Глубокая расшифровка» ниже.';
     const engineWarnEl = document.getElementById('engine-warnings');
     if (DATA.meta.warnings && DATA.meta.warnings.length) {
       engineWarnEl.textContent = DATA.meta.warnings.join(' ');
@@ -9429,6 +9866,7 @@ document.getElementById('calc-btn').addEventListener('click', () => {
 
     render();
     setCalcStatus('Карта построена.', 'ok');
+    resetInterpretation(); // новая карта — старая расшифровка больше не актуальна
   } catch (err) {
     console.error(err);
     setCalcStatus('Не удалось посчитать карту: ' + (err && err.message ? err.message : String(err)), 'error');
@@ -9485,6 +9923,226 @@ chartWrap.addEventListener('pointermove', (e) => {
 
 applyViewBox();
 render();
+
+// ============================================================================
+// UI «Глубокая расшифровка»: генерация текста + сброс при пересчёте карты
+// (или смене системы домов — от неё зависит DATA.pointHousesBySystem) + PDF
+// ============================================================================
+const interpGenerateBtn = document.getElementById('interp-generate-btn');
+const interpPdfBtn = document.getElementById('interp-pdf-btn');
+const interpStatusEl = document.getElementById('interp-status');
+const interpBodyEl = document.getElementById('interp-body');
+let lastInterpretation = null; // { sections, label } — кэш для PDF, чтобы не пересчитывать
+
+function resetInterpretation() {
+  lastInterpretation = null;
+  interpBodyEl.classList.remove('active');
+  interpBodyEl.innerHTML = '';
+  interpPdfBtn.style.display = 'none';
+  interpStatusEl.textContent = '';
+  interpGenerateBtn.disabled = false;
+  interpGenerateBtn.textContent = 'Сформировать расшифровку';
+}
+
+function renderInterpretation() {
+  const houses = DATA.housesBySystem[currentSystem];
+  const pointHouses = DATA.pointHousesBySystem[currentSystem];
+  const sections = buildInterpretation(DATA, pointHouses, houses);
+  lastInterpretation = { sections, label: DATA.meta.label || '—' };
+  interpBodyEl.innerHTML = sections.map((s) =>
+    `<div class="interp-block"><h3>${s.title}</h3><p class="interp-basis">${s.basis}</p>${s.html}</div>`
+  ).join('');
+  interpBodyEl.classList.add('active');
+  interpPdfBtn.style.display = 'inline-block';
+  interpStatusEl.textContent = 'Расшифровка сформирована — на основе текущей карты и системы домов «' + HOUSE_SYSTEM_LABEL[currentSystem] + '».';
+  interpGenerateBtn.textContent = 'Сформировать заново';
+}
+
+interpGenerateBtn.addEventListener('click', renderInterpretation);
+// смена системы домов делает уже показанную расшифровку устаревшей (дома
+// планет пересчитываются) — прячем её и просим сформировать заново, а не
+// молча оставляем текст с домами от прошлой системы. Сброс при пересчёте
+// самой карты — см. resetInterpretation() сразу после setCalcStatus('Карта
+// построена') в обработчике calc-btn выше.
+houseSelect.addEventListener('change', resetInterpretation);
+
+// --- растеризация SVG-колеса в PNG (для встраивания картинки в PDF) ---
+// Инлайним вычисленные стили в клон, т.к. классы из внешнего <style> не
+// попадают в сериализованный SVG сами по себе (иначе колесо в PDF выйдет
+// пустым/бесцветным).
+function svgToPngDataUrl(scale) {
+  return new Promise((resolve, reject) => {
+    try {
+      const original = document.getElementById('chart-svg');
+      const clone = original.cloneNode(true);
+      const STYLE_PROPS = ['fill', 'stroke', 'stroke-width', 'stroke-opacity', 'opacity', 'font-size', 'font-family', 'text-anchor', 'dominant-baseline', 'stroke-dasharray'];
+      const inlineStyle = (srcEl, dstEl) => {
+        const cs = window.getComputedStyle(srcEl);
+        let styleStr = '';
+        STYLE_PROPS.forEach((p) => { const v = cs.getPropertyValue(p); if (v) styleStr += p + ':' + v + ';'; });
+        dstEl.setAttribute('style', styleStr);
+      };
+      inlineStyle(original, clone);
+      const originalNodes = original.querySelectorAll('*');
+      const cloneNodes = clone.querySelectorAll('*');
+      for (let i = 0; i < originalNodes.length; i++) inlineStyle(originalNodes[i], cloneNodes[i]);
+
+      clone.setAttribute('viewBox', '0 0 640 640'); // полный вид, без учёта текущего zoom/pan на странице
+      clone.setAttribute('width', '640');
+      clone.setAttribute('height', '640');
+      const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      bg.setAttribute('x', '0'); bg.setAttribute('y', '0');
+      bg.setAttribute('width', '640'); bg.setAttribute('height', '640');
+      bg.setAttribute('fill', '#131219');
+      clone.insertBefore(bg, clone.firstChild);
+
+      const svgString = new XMLSerializer().serializeToString(clone);
+      const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 640 * scale; canvas.height = 640 * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = (e) => { URL.revokeObjectURL(url); reject(new Error('Не удалось растеризовать SVG')); };
+      img.src = url;
+    } catch (e) { reject(e); }
+  });
+}
+
+// --- кириллический шрифт для jsPDF ---
+// Встроенные шрифты jsPDF (helvetica/times/courier) поддерживают только
+// латиницу (WinAnsi) — без явно встроенного шрифта русский текст в PDF
+// выйдет пустым или "кракозябрами". Подгружаем PT Serif (полная поддержка
+// кириллицы, гарнитура в духе редакционной эстетики сайта) с Google Fonts
+// один раз и кэшируем как base64 для jsPDF VFS.
+const CYRILLIC_FONT_URLS = {
+  normal: 'https://fonts.gstatic.com/s/ptserif/v19/EJRVQgYoZZY2vCFuvAFSzrq_dSb_.ttf',
+  bold: 'https://fonts.gstatic.com/s/ptserif/v19/EJRSQgYoZZY2vCFuvAnt66qWVy7Vp8NA.ttf',
+};
+const cyrillicFontCache = {};
+function arrayBufferToBase64(buf) {
+  let binary = '';
+  const bytes = new Uint8Array(buf);
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+async function ensureCyrillicFont(doc, weight) {
+  if (!cyrillicFontCache[weight]) {
+    const resp = await fetch(CYRILLIC_FONT_URLS[weight]);
+    if (!resp.ok) throw new Error('Не удалось загрузить шрифт (' + resp.status + ')');
+    cyrillicFontCache[weight] = arrayBufferToBase64(await resp.arrayBuffer());
+  }
+  const fileName = 'PTSerif-' + weight + '.ttf';
+  doc.addFileToVFS(fileName, cyrillicFontCache[weight]);
+  doc.addFont(fileName, 'PTSerif', weight === 'bold' ? 'bold' : 'normal');
+}
+
+async function generatePdf() {
+  if (!lastInterpretation) return;
+  interpPdfBtn.disabled = true;
+  interpStatusEl.textContent = 'Готовлю PDF…';
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    await ensureCyrillicFont(doc, 'normal');
+    await ensureCyrillicFont(doc, 'bold');
+
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const marginX = 18;
+    const maxLineWidth = pageW - marginX * 2;
+    let y = 20;
+
+    function ensureSpace(needed) {
+      if (y + needed > pageH - 16) { doc.addPage(); y = 20; }
+    }
+
+    doc.setFont('PTSerif', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(30, 26, 20);
+    doc.text('ASTRA — Глубокая расшифровка', marginX, y);
+    y += 8;
+    doc.setFont('PTSerif', 'normal');
+    doc.setFontSize(11);
+    doc.setTextColor(110, 98, 78);
+    doc.text(lastInterpretation.label, marginX, y);
+    y += 10;
+
+    // Колесо карты картинкой — если растеризация не удалась (напр. в редком
+    // браузере), просто продолжаем без неё, не ломая весь экспорт
+    try {
+      const png = await svgToPngDataUrl(2);
+      const imgSize = 68;
+      doc.addImage(png, 'PNG', marginX, y, imgSize, imgSize);
+      y += imgSize + 8;
+    } catch (imgErr) {
+      console.warn('Не удалось встроить изображение колеса в PDF:', imgErr);
+    }
+
+    doc.setDrawColor(205, 170, 110);
+    doc.line(marginX, y, pageW - marginX, y);
+    y += 9;
+
+    lastInterpretation.sections.forEach((section) => {
+      ensureSpace(18);
+      doc.setFont('PTSerif', 'bold');
+      doc.setFontSize(14);
+      doc.setTextColor(30, 26, 20);
+      doc.text(section.title, marginX, y);
+      y += 6;
+
+      doc.setFont('PTSerif', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(140, 130, 115);
+      const basisLines = doc.splitTextToSize(section.basis, maxLineWidth);
+      ensureSpace(basisLines.length * 4.2 + 4);
+      doc.text(basisLines, marginX, y);
+      y += basisLines.length * 4.2 + 4;
+
+      const tmp = document.createElement('div');
+      tmp.innerHTML = section.html;
+      const paragraphs = [];
+      tmp.querySelectorAll('p, li').forEach((el) => { const t = el.textContent.trim(); if (t) paragraphs.push(t); });
+
+      doc.setFont('PTSerif', 'normal');
+      doc.setFontSize(11);
+      doc.setTextColor(40, 36, 30);
+      paragraphs.forEach((para) => {
+        const lines = doc.splitTextToSize('— ' + para, maxLineWidth);
+        ensureSpace(lines.length * 5.4 + 3);
+        doc.text(lines, marginX, y);
+        y += lines.length * 5.4 + 3;
+      });
+      y += 4;
+    });
+
+    ensureSpace(20);
+    doc.setFont('PTSerif', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(140, 130, 115);
+    const disclaimer = 'Расшифровка — инструмент для размышления о своей карте, а не научно доказанный факт и не медицинская, юридическая или финансовая рекомендация. Сформировано ASTRA Engine (github.com/starunovserhii/astra-engine, MIT).';
+    doc.text(doc.splitTextToSize(disclaimer, maxLineWidth), marginX, y);
+
+    const fileName = 'astra-rasshifrovka-' + new Date().toISOString().slice(0, 10) + '.pdf';
+    doc.save(fileName);
+    interpStatusEl.textContent = 'PDF скачан.';
+  } catch (err) {
+    console.error(err);
+    interpStatusEl.textContent = 'Не удалось создать PDF: ' + (err && err.message ? err.message : String(err));
+  } finally {
+    interpPdfBtn.disabled = false;
+  }
+}
+
+interpPdfBtn.addEventListener('click', generatePdf);
 </script>
 </body>
 </html>
