@@ -170,6 +170,7 @@
   /* заливка глифа знака теперь задаётся поточечно (цвет стихии — см.
      render()), поэтому здесь только геометрия шрифта, без fill */
   .sign-label { font-size: 16px; text-anchor: middle; dominant-baseline: middle; font-family: 'Segoe UI Symbol', 'Noto Sans Symbols', sans-serif; font-weight: 600; }
+  .sign-label-text { font-size: 10.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
   .cusp-line { stroke: var(--wheel-line); stroke-width: 1; }
   .cusp-line.angle { stroke: var(--wheel-accent); stroke-width: 1.8; }
   .house-num { font-size: 10px; fill: var(--wheel-text); font-family: -apple-system, sans-serif; text-anchor: middle; dominant-baseline: middle; font-weight: 600; }
@@ -245,6 +246,100 @@
   }
   input:checked + .slider-track { border-color: var(--accent-dim); }
   input:checked + .slider-track::before { transform: translateX(16px); background: var(--accent); }
+
+  .settings-subhead {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin: 0.9rem 0 0.55rem;
+    padding-top: 0.7rem;
+    border-top: 1px dashed var(--border);
+  }
+  .control-row-sub {
+    padding-left: 0.8rem;
+    margin-top: -0.2rem;
+    opacity: 0.85;
+  }
+  .control-row-sub.is-disabled { opacity: 0.4; pointer-events: none; }
+  .control-row-stack {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.35rem;
+  }
+  .control-row-stack input[type=range] {
+    width: 100%;
+    accent-color: var(--accent);
+  }
+  .aspect-type-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.5rem;
+    margin-bottom: 0.7rem;
+  }
+  .aspect-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.76rem;
+    color: var(--text-dim);
+    background: var(--bg-panel-2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0.22rem 0.55rem 0.22rem 0.4rem;
+    cursor: pointer;
+  }
+  .aspect-chip input[type=checkbox] { margin: 0; width: auto; cursor: pointer; }
+  .aspect-chip.is-off { opacity: 0.5; }
+  .aspect-chip-orb {
+    width: 2.6em;
+    background: var(--bg-panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.05rem 0.2rem;
+    font-size: 0.74rem;
+    font-family: inherit;
+  }
+
+  .settings-subhead-first { border-top: none; padding-top: 0; margin-top: 0; }
+  .preset-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .preset-btn {
+    flex: 1;
+    background: var(--bg-panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.76rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .preset-btn:hover { border-color: var(--accent-dim); color: var(--accent); }
+  .preset-btn-small {
+    flex: none;
+    width: 100%;
+    margin-bottom: 0.6rem;
+    padding: 0.32rem 0.5rem;
+    font-size: 0.72rem;
+  }
+  .accent-color-controls { display: flex; align-items: center; gap: 0.4rem; }
+  #accent-color-input {
+    width: 30px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: none;
+    cursor: pointer;
+  }
 
   .form-row { margin-bottom: 0.65rem; font-size: 0.83rem; color: var(--text-dim); }
   .form-row label { display: block; margin-bottom: 0.28rem; }
@@ -472,6 +567,13 @@
 
     <div class="panel">
       <h2>Настройки</h2>
+
+      <h3 class="settings-subhead settings-subhead-first">Пресеты</h3>
+      <div class="preset-buttons">
+        <button type="button" class="preset-btn" id="preset-simple">Простой (для клиента)</button>
+        <button type="button" class="preset-btn" id="preset-professional">Профессиональный</button>
+      </div>
+
       <div class="control-row">
         <span>Система домов</span>
         <select id="house-system-select"></select>
@@ -489,6 +591,89 @@
           <input type="checkbox" id="toggle-houses" checked>
           <span class="slider-track"></span>
         </label>
+      </div>
+      <div class="control-row">
+        <span>Зодиак</span>
+        <select id="zodiac-mode-select">
+          <option value="tropical">Тропический</option>
+          <option value="sidereal">Сидерический (Лахири)</option>
+        </select>
+      </div>
+
+      <h3 class="settings-subhead">Дополнительные точки</h3>
+      <div class="control-row">
+        <span>Хирон</span>
+        <label class="switch"><input type="checkbox" id="toggle-chiron" checked><span class="slider-track"></span></label>
+      </div>
+      <div class="control-row">
+        <span>Лунные узлы</span>
+        <label class="switch"><input type="checkbox" id="toggle-nodes" checked><span class="slider-track"></span></label>
+      </div>
+      <div class="control-row control-row-sub" id="node-variant-row">
+        <span>Вариант узла</span>
+        <select id="node-variant-select">
+          <option value="mean">Средний (Mean)</option>
+          <option value="true">Истинный (True)</option>
+        </select>
+      </div>
+      <div class="control-row">
+        <span>Лилит</span>
+        <label class="switch"><input type="checkbox" id="toggle-lilith" checked><span class="slider-track"></span></label>
+      </div>
+      <div class="control-row control-row-sub" id="lilith-variant-row">
+        <span>Вариант Лилит</span>
+        <select id="lilith-variant-select">
+          <option value="mean">Средняя (Mean)</option>
+          <option value="true">Истинная (True)</option>
+        </select>
+      </div>
+      <div class="control-row">
+        <span>Вертекс</span>
+        <label class="switch"><input type="checkbox" id="toggle-vertex" checked><span class="slider-track"></span></label>
+      </div>
+      <div class="control-row">
+        <span>Жребий Фортуны</span>
+        <label class="switch"><input type="checkbox" id="toggle-pof" checked><span class="slider-track"></span></label>
+      </div>
+      <div class="control-row">
+        <span>Церера</span>
+        <label class="switch"><input type="checkbox" id="toggle-ceres" checked><span class="slider-track"></span></label>
+      </div>
+      <div class="control-row">
+        <span>Паллада</span>
+        <label class="switch"><input type="checkbox" id="toggle-pallas" checked><span class="slider-track"></span></label>
+      </div>
+      <div class="control-row">
+        <span>Юнона</span>
+        <label class="switch"><input type="checkbox" id="toggle-juno" checked><span class="slider-track"></span></label>
+      </div>
+      <div class="control-row">
+        <span>Веста</span>
+        <label class="switch"><input type="checkbox" id="toggle-vesta" checked><span class="slider-track"></span></label>
+      </div>
+
+      <h3 class="settings-subhead">Аспекты (вкл./выкл. и орб для каждого типа)</h3>
+      <div class="aspect-type-chips" id="aspect-type-chips"></div>
+      <button type="button" class="preset-btn preset-btn-small" id="reset-orbs-btn">Сбросить орбы по умолчанию</button>
+
+      <h3 class="settings-subhead">Подписи и оформление колеса</h3>
+      <div class="control-row">
+        <span>Стиль подписей</span>
+        <select id="label-style-select">
+          <option value="glyph">Глифы (☉ ☽ ♈)</option>
+          <option value="text">Текст (Со, Лу, Овн)</option>
+        </select>
+      </div>
+      <div class="control-row">
+        <span>Значки достоинств планет</span>
+        <label class="switch"><input type="checkbox" id="toggle-dignity-markers" checked><span class="slider-track"></span></label>
+      </div>
+      <div class="control-row">
+        <span>Акцентный цвет колеса</span>
+        <div class="accent-color-controls">
+          <input type="color" id="accent-color-input" value="#c9a15a">
+          <button type="button" class="preset-btn preset-btn-small" id="accent-color-reset">По умолчанию</button>
+        </div>
       </div>
     </div>
 
@@ -668,7 +853,7 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
   applyThemeToggleLabel();
 });
 
-let DATA = {"meta":{"label":"Пример натальной карты — демонстрация ASTRA Engine (условные данные, 15.06.1990, 08:30, Москва)","engineVersion":"0.1.0","houseSystemDefault":"placidus"},"points":[{"name":"Sun","longitude":83.9901,"sign":"Gemini","degreeInSign":23.99,"isRetrograde":false},{"name":"Moon","longitude":343.4135,"sign":"Pisces","degreeInSign":13.41,"isRetrograde":false},{"name":"Mercury","longitude":65.441,"sign":"Gemini","degreeInSign":5.44,"isRetrograde":false},{"name":"Venus","longitude":48.6059,"sign":"Taurus","degreeInSign":18.61,"isRetrograde":false},{"name":"Mars","longitude":10.9362,"sign":"Aries","degreeInSign":10.94,"isRetrograde":false},{"name":"Jupiter","longitude":105.8579,"sign":"Cancer","degreeInSign":15.86,"isRetrograde":false},{"name":"Saturn","longitude":294.0404,"sign":"Capricorn","degreeInSign":24.04,"isRetrograde":true},{"name":"Uranus","longitude":278.1696,"sign":"Capricorn","degreeInSign":8.17,"isRetrograde":true},{"name":"Neptune","longitude":283.7205,"sign":"Capricorn","degreeInSign":13.72,"isRetrograde":true},{"name":"Pluto","longitude":225.4051,"sign":"Scorpio","degreeInSign":15.41,"isRetrograde":true},{"name":"Chiron","longitude":43.216,"sign":"Taurus","degreeInSign":13.22,"isRetrograde":false},{"name":"MeanNode","longitude":309.702,"sign":"Aquarius","degreeInSign":9.7,"isRetrograde":true},{"name":"MeanSouthNode","longitude":129.702,"sign":"Leo","degreeInSign":9.7,"isRetrograde":true},{"name":"TrueNode","longitude":307.9205,"sign":"Aquarius","degreeInSign":7.92,"isRetrograde":true},{"name":"TrueSouthNode","longitude":127.9205,"sign":"Leo","degreeInSign":7.92,"isRetrograde":true},{"name":"MeanLilith","longitude":234.8729,"sign":"Scorpio","degreeInSign":24.87,"isRetrograde":false},{"name":"TrueLilith","longitude":231.1546,"sign":"Scorpio","degreeInSign":21.15,"isRetrograde":false},{"name":"Vertex","longitude":327.8151,"sign":"Aquarius","degreeInSign":27.82,"isRetrograde":false},{"name":"AntiVertex","longitude":147.8151,"sign":"Leo","degreeInSign":27.82,"isRetrograde":false},{"name":"PartOfFortune","longitude":65.1151,"sign":"Gemini","degreeInSign":5.12,"isRetrograde":false}],"dignities":{"Mercury":"rulership","Venus":"rulership","Mars":"rulership","Jupiter":"exaltation","Saturn":"rulership","Pluto":"rulership"},"aspects":[{"a":"Sun","b":"Saturn","type":"quincunx","orb":0.05,"applying":true},{"a":"Sun","b":"MeanNode","type":"sesquiquadrate","orb":0.71,"applying":true},{"a":"Sun","b":"MeanSouthNode","type":"semisquare","orb":0.71,"applying":true},{"a":"Sun","b":"TrueNode","type":"sesquiquadrate","orb":1.07,"applying":false},{"a":"Sun","b":"TrueSouthNode","type":"semisquare","orb":1.07,"applying":false},{"a":"Sun","b":"MeanLilith","type":"quincunx","orb":0.88,"applying":true},{"a":"Sun","b":"TrueLilith","type":"quincunx","orb":2.84,"applying":false},{"a":"Sun","b":"Vertex","type":"trine","orb":3.82,"applying":true},{"a":"Sun","b":"AntiVertex","type":"sextile","orb":3.82,"applying":true},{"a":"Moon","b":"Mercury","type":"square","orb":7.97,"applying":false},{"a":"Moon","b":"Venus","type":"sextile","orb":5.19,"applying":true},{"a":"Moon","b":"Mars","type":"semisextile","orb":2.48,"applying":false},{"a":"Moon","b":"Jupiter","type":"trine","orb":2.44,"applying":true},{"a":"Moon","b":"Uranus","type":"sextile","orb":5.24,"applying":false},{"a":"Moon","b":"Neptune","type":"sextile","orb":0.31,"applying":true},{"a":"Moon","b":"Pluto","type":"trine","orb":1.99,"applying":true},{"a":"Moon","b":"Chiron","type":"sextile","orb":0.2,"applying":false},{"a":"Moon","b":"MeanNode","type":"semisextile","orb":3.71,"applying":false},{"a":"Moon","b":"MeanSouthNode","type":"quincunx","orb":3.71,"applying":false},{"a":"Moon","b":"TrueLilith","type":"trine","orb":7.74,"applying":true},{"a":"Moon","b":"PartOfFortune","type":"square","orb":8.3,"applying":false},{"a":"Mercury","b":"Uranus","type":"quincunx","orb":2.73,"applying":true},{"a":"Mercury","b":"MeanNode","type":"trine","orb":4.26,"applying":true},{"a":"Mercury","b":"MeanSouthNode","type":"sextile","orb":4.26,"applying":true},{"a":"Mercury","b":"TrueNode","type":"trine","orb":2.48,"applying":true},{"a":"Mercury","b":"TrueSouthNode","type":"sextile","orb":2.48,"applying":true},{"a":"Mercury","b":"PartOfFortune","type":"conjunction","orb":0.33,"applying":false},{"a":"Venus","b":"Jupiter","type":"sextile","orb":2.75,"applying":false},{"a":"Venus","b":"Saturn","type":"trine","orb":5.43,"applying":true},{"a":"Venus","b":"Neptune","type":"trine","orb":4.89,"applying":false},{"a":"Venus","b":"Pluto","type":"opposition","orb":3.2,"applying":false},{"a":"Venus","b":"Chiron","type":"conjunction","orb":5.39,"applying":false},{"a":"Venus","b":"MeanLilith","type":"opposition","orb":6.27,"applying":true},{"a":"Venus","b":"TrueLilith","type":"opposition","orb":2.55,"applying":true},{"a":"Mars","b":"Jupiter","type":"square","orb":4.92,"applying":true},{"a":"Mars","b":"Uranus","type":"square","orb":2.77,"applying":false},{"a":"Mars","b":"Neptune","type":"square","orb":2.78,"applying":true},{"a":"Mars","b":"MeanNode","type":"sextile","orb":1.23,"applying":false},{"a":"Mars","b":"MeanSouthNode","type":"trine","orb":1.23,"applying":false},{"a":"Mars","b":"TrueNode","type":"sextile","orb":3.02,"applying":false},{"a":"Mars","b":"TrueSouthNode","type":"trine","orb":3.02,"applying":false},{"a":"Mars","b":"MeanLilith","type":"sesquiquadrate","orb":1.06,"applying":false},{"a":"Mars","b":"Vertex","type":"semisquare","orb":1.88,"applying":true},{"a":"Mars","b":"AntiVertex","type":"sesquiquadrate","orb":1.88,"applying":true},{"a":"Jupiter","b":"Uranus","type":"opposition","orb":7.69,"applying":false},{"a":"Jupiter","b":"Neptune","type":"opposition","orb":2.14,"applying":false},{"a":"Jupiter","b":"Pluto","type":"trine","orb":0.45,"applying":false},{"a":"Jupiter","b":"Chiron","type":"sextile","orb":2.64,"applying":false},{"a":"Jupiter","b":"TrueLilith","type":"trine","orb":5.3,"applying":true},{"a":"Saturn","b":"MeanLilith","type":"sextile","orb":0.83,"applying":false},{"a":"Saturn","b":"TrueLilith","type":"sextile","orb":2.89,"applying":true},{"a":"Uranus","b":"Neptune","type":"conjunction","orb":5.55,"applying":false},{"a":"Uranus","b":"Chiron","type":"trine","orb":5.05,"applying":false},{"a":"Uranus","b":"MeanNode","type":"semisextile","orb":1.53,"applying":true},{"a":"Uranus","b":"MeanSouthNode","type":"quincunx","orb":1.53,"applying":true},{"a":"Uranus","b":"TrueNode","type":"semisextile","orb":0.25,"applying":false},{"a":"Uranus","b":"TrueSouthNode","type":"quincunx","orb":0.25,"applying":false},{"a":"Uranus","b":"MeanLilith","type":"semisquare","orb":1.7,"applying":false},{"a":"Neptune","b":"Pluto","type":"sextile","orb":1.68,"applying":false},{"a":"Neptune","b":"Chiron","type":"trine","orb":0.5,"applying":true},{"a":"Neptune","b":"Vertex","type":"semisquare","orb":0.91,"applying":true},{"a":"Neptune","b":"AntiVertex","type":"sesquiquadrate","orb":0.91,"applying":true},{"a":"Pluto","b":"Chiron","type":"opposition","orb":2.19,"applying":true},{"a":"Pluto","b":"MeanNode","type":"square","orb":5.7,"applying":false},{"a":"Pluto","b":"MeanSouthNode","type":"square","orb":5.7,"applying":false},{"a":"Pluto","b":"TrueLilith","type":"conjunction","orb":5.75,"applying":false},{"a":"Chiron","b":"MeanNode","type":"square","orb":3.51,"applying":false},{"a":"Chiron","b":"MeanSouthNode","type":"square","orb":3.51,"applying":false},{"a":"Chiron","b":"TrueNode","type":"square","orb":5.3,"applying":false},{"a":"Chiron","b":"TrueSouthNode","type":"square","orb":5.3,"applying":false},{"a":"Chiron","b":"TrueLilith","type":"opposition","orb":7.94,"applying":false},{"a":"MeanNode","b":"MeanSouthNode","type":"opposition","orb":0,"applying":false},{"a":"MeanNode","b":"TrueNode","type":"conjunction","orb":1.78,"applying":true},{"a":"MeanNode","b":"TrueSouthNode","type":"opposition","orb":1.78,"applying":true},{"a":"MeanNode","b":"PartOfFortune","type":"trine","orb":4.59,"applying":true},{"a":"MeanSouthNode","b":"TrueNode","type":"opposition","orb":1.78,"applying":true},{"a":"MeanSouthNode","b":"TrueSouthNode","type":"conjunction","orb":1.78,"applying":true},{"a":"MeanSouthNode","b":"PartOfFortune","type":"sextile","orb":4.59,"applying":true},{"a":"TrueNode","b":"TrueSouthNode","type":"opposition","orb":0,"applying":false},{"a":"TrueNode","b":"PartOfFortune","type":"trine","orb":2.81,"applying":true},{"a":"TrueSouthNode","b":"PartOfFortune","type":"sextile","orb":2.81,"applying":true},{"a":"MeanLilith","b":"TrueLilith","type":"conjunction","orb":3.72,"applying":true},{"a":"MeanLilith","b":"Vertex","type":"square","orb":2.94,"applying":true},{"a":"MeanLilith","b":"AntiVertex","type":"square","orb":2.94,"applying":true},{"a":"TrueLilith","b":"Vertex","type":"square","orb":6.66,"applying":true},{"a":"TrueLilith","b":"AntiVertex","type":"square","orb":6.66,"applying":true},{"a":"Vertex","b":"AntiVertex","type":"opposition","orb":0,"applying":false}],"housesBySystem":{"placidus":{"cusps":[165.6917,186.4906,214.1813,250.1173,289.0991,320.9835,345.6917,6.4906,34.1813,70.1173,109.0991,140.9835],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"wholeSign":{"cusps":[150,180,210,240,270,300,330,0,30,60,90,120],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"equal":{"cusps":[165.6917,195.6917,225.6917,255.6917,285.6917,315.6917,345.6917,15.6917,45.6917,75.6917,105.6917,135.6917],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"koch":{"cusps":[165.6917,193.7004,221.4863,250.1173,289.2153,317.9103,345.6917,13.7004,41.4863,70.1173,109.2153,137.9103],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"regiomontanus":{"cusps":[165.6917,185.9604,211.6322,250.1173,293.3777,323.9902,345.6917,5.9604,31.6322,70.1173,113.3777,143.9902],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"campanus":{"cusps":[165.6917,198.2422,225.2669,250.1173,277.1009,309.5936,345.6917,18.2422,45.2669,70.1173,97.1009,129.5936],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"porphyry":{"cusps":[165.6917,193.8336,221.9754,250.1173,281.9754,313.8336,345.6917,13.8336,41.9754,70.1173,101.9754,133.8336],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"alcabitius":{"cusps":[165.6917,183.1864,218.0738,250.1173,280.3584,311.5887,345.6917,3.1864,38.0738,70.1173,100.3584,131.5887],"ascendant":165.6917,"midheaven":70.1173,"reliable":true}},"pointHousesBySystem":{"placidus":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":8,"Jupiter":10,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"wholeSign":{"Sun":10,"Moon":7,"Mercury":10,"Venus":9,"Mars":8,"Jupiter":11,"Saturn":5,"Uranus":5,"Neptune":5,"Pluto":3,"Chiron":9,"MeanNode":6,"MeanSouthNode":12,"TrueNode":6,"TrueSouthNode":12,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":10},"equal":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":11,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":2,"Chiron":8,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"koch":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":10,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"regiomontanus":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":8,"Jupiter":10,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"campanus":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":11,"Saturn":5,"Uranus":5,"Neptune":5,"Pluto":3,"Chiron":8,"MeanNode":6,"MeanSouthNode":12,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"porphyry":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":11,"Saturn":5,"Uranus":4,"Neptune":5,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"alcabitius":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":8,"Jupiter":11,"Saturn":5,"Uranus":4,"Neptune":5,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9}}};
+let DATA = {"meta":{"label":"Пример натальной карты — демонстрация ASTRA Engine (условные данные, 15.06.1990, 08:30, Москва)","engineVersion":"0.1.0","houseSystemDefault":"placidus"},"points":[{"name":"Sun","longitude":83.9901,"sign":"Gemini","degreeInSign":23.99,"isRetrograde":false},{"name":"Moon","longitude":343.4135,"sign":"Pisces","degreeInSign":13.41,"isRetrograde":false},{"name":"Mercury","longitude":65.441,"sign":"Gemini","degreeInSign":5.44,"isRetrograde":false},{"name":"Venus","longitude":48.6059,"sign":"Taurus","degreeInSign":18.61,"isRetrograde":false},{"name":"Mars","longitude":10.9362,"sign":"Aries","degreeInSign":10.94,"isRetrograde":false},{"name":"Jupiter","longitude":105.8579,"sign":"Cancer","degreeInSign":15.86,"isRetrograde":false},{"name":"Saturn","longitude":294.0404,"sign":"Capricorn","degreeInSign":24.04,"isRetrograde":true},{"name":"Uranus","longitude":278.1696,"sign":"Capricorn","degreeInSign":8.17,"isRetrograde":true},{"name":"Neptune","longitude":283.7205,"sign":"Capricorn","degreeInSign":13.72,"isRetrograde":true},{"name":"Pluto","longitude":225.4051,"sign":"Scorpio","degreeInSign":15.41,"isRetrograde":true},{"name":"Chiron","longitude":43.216,"sign":"Taurus","degreeInSign":13.22,"isRetrograde":false},{"name":"MeanNode","longitude":309.702,"sign":"Aquarius","degreeInSign":9.7,"isRetrograde":true},{"name":"MeanSouthNode","longitude":129.702,"sign":"Leo","degreeInSign":9.7,"isRetrograde":true},{"name":"TrueNode","longitude":307.9205,"sign":"Aquarius","degreeInSign":7.92,"isRetrograde":true},{"name":"TrueSouthNode","longitude":127.9205,"sign":"Leo","degreeInSign":7.92,"isRetrograde":true},{"name":"MeanLilith","longitude":234.8729,"sign":"Scorpio","degreeInSign":24.87,"isRetrograde":false},{"name":"TrueLilith","longitude":231.1546,"sign":"Scorpio","degreeInSign":21.15,"isRetrograde":false},{"name":"Ceres","longitude":115.2042,"sign":"Cancer","degreeInSign":25.2,"isRetrograde":false},{"name":"Pallas","longitude":71.3368,"sign":"Gemini","degreeInSign":11.34,"isRetrograde":false},{"name":"Juno","longitude":222.4081,"sign":"Scorpio","degreeInSign":12.41,"isRetrograde":true},{"name":"Vesta","longitude":34.3285,"sign":"Taurus","degreeInSign":4.33,"isRetrograde":false},{"name":"Vertex","longitude":327.8151,"sign":"Aquarius","degreeInSign":27.82,"isRetrograde":false},{"name":"AntiVertex","longitude":147.8151,"sign":"Leo","degreeInSign":27.82,"isRetrograde":false},{"name":"PartOfFortune","longitude":65.1151,"sign":"Gemini","degreeInSign":5.12,"isRetrograde":false}],"dignities":{"Mercury":"rulership","Venus":"rulership","Mars":"rulership","Jupiter":"exaltation","Saturn":"rulership","Pluto":"rulership"},"aspects":[{"a":"Sun","b":"Saturn","type":"quincunx","orb":0.05,"applying":true},{"a":"Sun","b":"MeanNode","type":"sesquiquadrate","orb":0.71,"applying":true},{"a":"Sun","b":"MeanSouthNode","type":"semisquare","orb":0.71,"applying":true},{"a":"Sun","b":"TrueNode","type":"sesquiquadrate","orb":1.07,"applying":false},{"a":"Sun","b":"TrueSouthNode","type":"semisquare","orb":1.07,"applying":false},{"a":"Sun","b":"MeanLilith","type":"quincunx","orb":0.88,"applying":true},{"a":"Sun","b":"TrueLilith","type":"quincunx","orb":2.84,"applying":false},{"a":"Sun","b":"Ceres","type":"semisextile","orb":1.21,"applying":true},{"a":"Sun","b":"Juno","type":"sesquiquadrate","orb":3.42,"applying":true},{"a":"Sun","b":"Vertex","type":"trine","orb":3.82,"applying":true},{"a":"Sun","b":"AntiVertex","type":"sextile","orb":3.82,"applying":true},{"a":"Moon","b":"Mercury","type":"square","orb":7.97,"applying":false},{"a":"Moon","b":"Venus","type":"sextile","orb":5.19,"applying":true},{"a":"Moon","b":"Mars","type":"semisextile","orb":2.48,"applying":false},{"a":"Moon","b":"Jupiter","type":"trine","orb":2.44,"applying":true},{"a":"Moon","b":"Uranus","type":"sextile","orb":5.24,"applying":false},{"a":"Moon","b":"Neptune","type":"sextile","orb":0.31,"applying":true},{"a":"Moon","b":"Pluto","type":"trine","orb":1.99,"applying":true},{"a":"Moon","b":"Chiron","type":"sextile","orb":0.2,"applying":false},{"a":"Moon","b":"MeanNode","type":"semisextile","orb":3.71,"applying":false},{"a":"Moon","b":"MeanSouthNode","type":"quincunx","orb":3.71,"applying":false},{"a":"Moon","b":"TrueLilith","type":"trine","orb":7.74,"applying":true},{"a":"Moon","b":"Ceres","type":"sesquiquadrate","orb":3.21,"applying":false},{"a":"Moon","b":"Pallas","type":"square","orb":2.08,"applying":false},{"a":"Moon","b":"Juno","type":"trine","orb":1.01,"applying":false},{"a":"Moon","b":"PartOfFortune","type":"square","orb":8.3,"applying":false},{"a":"Mercury","b":"Uranus","type":"quincunx","orb":2.73,"applying":true},{"a":"Mercury","b":"MeanNode","type":"trine","orb":4.26,"applying":true},{"a":"Mercury","b":"MeanSouthNode","type":"sextile","orb":4.26,"applying":true},{"a":"Mercury","b":"TrueNode","type":"trine","orb":2.48,"applying":true},{"a":"Mercury","b":"TrueSouthNode","type":"sextile","orb":2.48,"applying":true},{"a":"Mercury","b":"Pallas","type":"conjunction","orb":5.9,"applying":true},{"a":"Mercury","b":"Vesta","type":"semisextile","orb":1.11,"applying":false},{"a":"Mercury","b":"PartOfFortune","type":"conjunction","orb":0.33,"applying":false},{"a":"Venus","b":"Jupiter","type":"sextile","orb":2.75,"applying":false},{"a":"Venus","b":"Saturn","type":"trine","orb":5.43,"applying":true},{"a":"Venus","b":"Neptune","type":"trine","orb":4.89,"applying":false},{"a":"Venus","b":"Pluto","type":"opposition","orb":3.2,"applying":false},{"a":"Venus","b":"Chiron","type":"conjunction","orb":5.39,"applying":false},{"a":"Venus","b":"MeanLilith","type":"opposition","orb":6.27,"applying":true},{"a":"Venus","b":"TrueLilith","type":"opposition","orb":2.55,"applying":true},{"a":"Venus","b":"Juno","type":"opposition","orb":6.2,"applying":false},{"a":"Mars","b":"Jupiter","type":"square","orb":4.92,"applying":true},{"a":"Mars","b":"Uranus","type":"square","orb":2.77,"applying":false},{"a":"Mars","b":"Neptune","type":"square","orb":2.78,"applying":true},{"a":"Mars","b":"MeanNode","type":"sextile","orb":1.23,"applying":false},{"a":"Mars","b":"MeanSouthNode","type":"trine","orb":1.23,"applying":false},{"a":"Mars","b":"TrueNode","type":"sextile","orb":3.02,"applying":false},{"a":"Mars","b":"TrueSouthNode","type":"trine","orb":3.02,"applying":false},{"a":"Mars","b":"MeanLilith","type":"sesquiquadrate","orb":1.06,"applying":false},{"a":"Mars","b":"Pallas","type":"sextile","orb":0.4,"applying":true},{"a":"Mars","b":"Juno","type":"quincunx","orb":1.47,"applying":true},{"a":"Mars","b":"Vertex","type":"semisquare","orb":1.88,"applying":true},{"a":"Mars","b":"AntiVertex","type":"sesquiquadrate","orb":1.88,"applying":true},{"a":"Jupiter","b":"Uranus","type":"opposition","orb":7.69,"applying":false},{"a":"Jupiter","b":"Neptune","type":"opposition","orb":2.14,"applying":false},{"a":"Jupiter","b":"Pluto","type":"trine","orb":0.45,"applying":false},{"a":"Jupiter","b":"Chiron","type":"sextile","orb":2.64,"applying":false},{"a":"Jupiter","b":"TrueLilith","type":"trine","orb":5.3,"applying":true},{"a":"Jupiter","b":"Juno","type":"trine","orb":3.45,"applying":false},{"a":"Saturn","b":"MeanLilith","type":"sextile","orb":0.83,"applying":false},{"a":"Saturn","b":"TrueLilith","type":"sextile","orb":2.89,"applying":true},{"a":"Saturn","b":"Ceres","type":"opposition","orb":1.16,"applying":false},{"a":"Uranus","b":"Neptune","type":"conjunction","orb":5.55,"applying":false},{"a":"Uranus","b":"Chiron","type":"trine","orb":5.05,"applying":false},{"a":"Uranus","b":"MeanNode","type":"semisextile","orb":1.53,"applying":true},{"a":"Uranus","b":"MeanSouthNode","type":"quincunx","orb":1.53,"applying":true},{"a":"Uranus","b":"TrueNode","type":"semisextile","orb":0.25,"applying":false},{"a":"Uranus","b":"TrueSouthNode","type":"quincunx","orb":0.25,"applying":false},{"a":"Uranus","b":"MeanLilith","type":"semisquare","orb":1.7,"applying":false},{"a":"Uranus","b":"Juno","type":"sextile","orb":4.24,"applying":true},{"a":"Uranus","b":"Vesta","type":"trine","orb":3.84,"applying":true},{"a":"Neptune","b":"Pluto","type":"sextile","orb":1.68,"applying":false},{"a":"Neptune","b":"Chiron","type":"trine","orb":0.5,"applying":true},{"a":"Neptune","b":"Pallas","type":"quincunx","orb":2.38,"applying":true},{"a":"Neptune","b":"Juno","type":"sextile","orb":1.31,"applying":false},{"a":"Neptune","b":"Vertex","type":"semisquare","orb":0.91,"applying":true},{"a":"Neptune","b":"AntiVertex","type":"sesquiquadrate","orb":0.91,"applying":true},{"a":"Pluto","b":"Chiron","type":"opposition","orb":2.19,"applying":true},{"a":"Pluto","b":"MeanNode","type":"square","orb":5.7,"applying":false},{"a":"Pluto","b":"MeanSouthNode","type":"square","orb":5.7,"applying":false},{"a":"Pluto","b":"TrueLilith","type":"conjunction","orb":5.75,"applying":false},{"a":"Pluto","b":"Juno","type":"conjunction","orb":3,"applying":false},{"a":"Chiron","b":"MeanNode","type":"square","orb":3.51,"applying":false},{"a":"Chiron","b":"MeanSouthNode","type":"square","orb":3.51,"applying":false},{"a":"Chiron","b":"TrueNode","type":"square","orb":5.3,"applying":false},{"a":"Chiron","b":"TrueSouthNode","type":"square","orb":5.3,"applying":false},{"a":"Chiron","b":"TrueLilith","type":"opposition","orb":7.94,"applying":false},{"a":"Chiron","b":"Pallas","type":"semisextile","orb":1.88,"applying":true},{"a":"Chiron","b":"Juno","type":"opposition","orb":0.81,"applying":false},{"a":"MeanNode","b":"MeanSouthNode","type":"opposition","orb":0,"applying":false},{"a":"MeanNode","b":"TrueNode","type":"conjunction","orb":1.78,"applying":true},{"a":"MeanNode","b":"TrueSouthNode","type":"opposition","orb":1.78,"applying":true},{"a":"MeanNode","b":"Pallas","type":"trine","orb":1.63,"applying":false},{"a":"MeanNode","b":"Juno","type":"square","orb":2.71,"applying":true},{"a":"MeanNode","b":"Vesta","type":"square","orb":5.37,"applying":true},{"a":"MeanNode","b":"PartOfFortune","type":"trine","orb":4.59,"applying":true},{"a":"MeanSouthNode","b":"TrueNode","type":"opposition","orb":1.78,"applying":true},{"a":"MeanSouthNode","b":"TrueSouthNode","type":"conjunction","orb":1.78,"applying":true},{"a":"MeanSouthNode","b":"Pallas","type":"sextile","orb":1.63,"applying":false},{"a":"MeanSouthNode","b":"Juno","type":"square","orb":2.71,"applying":true},{"a":"MeanSouthNode","b":"Vesta","type":"square","orb":5.37,"applying":true},{"a":"MeanSouthNode","b":"PartOfFortune","type":"sextile","orb":4.59,"applying":true},{"a":"TrueNode","b":"TrueSouthNode","type":"opposition","orb":0,"applying":false},{"a":"TrueNode","b":"Pallas","type":"trine","orb":3.42,"applying":false},{"a":"TrueNode","b":"Juno","type":"square","orb":4.49,"applying":true},{"a":"TrueNode","b":"Vesta","type":"square","orb":3.59,"applying":true},{"a":"TrueNode","b":"PartOfFortune","type":"trine","orb":2.81,"applying":true},{"a":"TrueSouthNode","b":"Pallas","type":"sextile","orb":3.42,"applying":false},{"a":"TrueSouthNode","b":"Juno","type":"square","orb":4.49,"applying":true},{"a":"TrueSouthNode","b":"Vesta","type":"square","orb":3.59,"applying":true},{"a":"TrueSouthNode","b":"PartOfFortune","type":"sextile","orb":2.81,"applying":true},{"a":"MeanLilith","b":"TrueLilith","type":"conjunction","orb":3.72,"applying":true},{"a":"MeanLilith","b":"Ceres","type":"trine","orb":0.33,"applying":false},{"a":"MeanLilith","b":"Vertex","type":"square","orb":2.94,"applying":true},{"a":"MeanLilith","b":"AntiVertex","type":"square","orb":2.94,"applying":true},{"a":"TrueLilith","b":"Ceres","type":"trine","orb":4.05,"applying":false},{"a":"TrueLilith","b":"Vertex","type":"square","orb":6.66,"applying":true},{"a":"TrueLilith","b":"AntiVertex","type":"square","orb":6.66,"applying":true},{"a":"Ceres","b":"Pallas","type":"semisquare","orb":1.13,"applying":false},{"a":"Ceres","b":"Vertex","type":"quincunx","orb":2.61,"applying":true},{"a":"Pallas","b":"Juno","type":"quincunx","orb":1.07,"applying":true},{"a":"Pallas","b":"PartOfFortune","type":"conjunction","orb":6.22,"applying":false},{"a":"Vesta","b":"AntiVertex","type":"trine","orb":6.51,"applying":false},{"a":"Vesta","b":"PartOfFortune","type":"semisextile","orb":0.79,"applying":true},{"a":"Vertex","b":"AntiVertex","type":"opposition","orb":0,"applying":false}],"housesBySystem":{"placidus":{"cusps":[165.6917,186.4906,214.1813,250.1173,289.0991,320.9835,345.6917,6.4906,34.1813,70.1173,109.0991,140.9835],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"wholeSign":{"cusps":[150,180,210,240,270,300,330,0,30,60,90,120],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"equal":{"cusps":[165.6917,195.6917,225.6917,255.6917,285.6917,315.6917,345.6917,15.6917,45.6917,75.6917,105.6917,135.6917],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"koch":{"cusps":[165.6917,193.7004,221.4863,250.1173,289.2153,317.9103,345.6917,13.7004,41.4863,70.1173,109.2153,137.9103],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"regiomontanus":{"cusps":[165.6917,185.9604,211.6322,250.1173,293.3777,323.9902,345.6917,5.9604,31.6322,70.1173,113.3777,143.9902],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"campanus":{"cusps":[165.6917,198.2422,225.2669,250.1173,277.1009,309.5936,345.6917,18.2422,45.2669,70.1173,97.1009,129.5936],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"porphyry":{"cusps":[165.6917,193.8336,221.9754,250.1173,281.9754,313.8336,345.6917,13.8336,41.9754,70.1173,101.9754,133.8336],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"alcabitius":{"cusps":[165.6917,183.1864,218.0738,250.1173,280.3584,311.5887,345.6917,3.1864,38.0738,70.1173,100.3584,131.5887],"ascendant":165.6917,"midheaven":70.1173,"reliable":true}},"pointHousesBySystem":{"placidus":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":8,"Jupiter":10,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"Ceres":11,"Pallas":10,"Juno":3,"Vesta":9,"PartOfFortune":9},"wholeSign":{"Sun":10,"Moon":7,"Mercury":10,"Venus":9,"Mars":8,"Jupiter":11,"Saturn":5,"Uranus":5,"Neptune":5,"Pluto":3,"Chiron":9,"MeanNode":6,"MeanSouthNode":12,"TrueNode":6,"TrueSouthNode":12,"MeanLilith":3,"TrueLilith":3,"Ceres":11,"Pallas":10,"Juno":3,"Vesta":9,"PartOfFortune":10},"equal":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":11,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":2,"Chiron":8,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"Ceres":11,"Pallas":9,"Juno":2,"Vesta":8,"PartOfFortune":9},"koch":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":10,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"Ceres":11,"Pallas":10,"Juno":3,"Vesta":8,"PartOfFortune":9},"regiomontanus":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":8,"Jupiter":10,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"Ceres":11,"Pallas":10,"Juno":3,"Vesta":9,"PartOfFortune":9},"campanus":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":11,"Saturn":5,"Uranus":5,"Neptune":5,"Pluto":3,"Chiron":8,"MeanNode":6,"MeanSouthNode":12,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"Ceres":11,"Pallas":10,"Juno":2,"Vesta":8,"PartOfFortune":9},"porphyry":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":11,"Saturn":5,"Uranus":4,"Neptune":5,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"Ceres":11,"Pallas":10,"Juno":3,"Vesta":8,"PartOfFortune":9},"alcabitius":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":8,"Jupiter":11,"Saturn":5,"Uranus":4,"Neptune":5,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"Ceres":11,"Pallas":10,"Juno":3,"Vesta":8,"PartOfFortune":9}}};
 
 // Момент и место рождения ТЕКУЩЕЙ карты — хранятся отдельно от DATA (которая
 // содержит только уже готовые для отрисовки факты), потому что транзитам
@@ -693,7 +878,27 @@ const PLANET_GLYPH = {
   Uranus:'♅', Neptune:'♆', Pluto:'♇', Chiron:'⚷',
   MeanNode:'☊', TrueNode:'☊', MeanSouthNode:'☋', TrueSouthNode:'☋',
   MeanLilith:'⚸', TrueLilith:'⚸', PartOfFortune:'⊕', Vertex:'Vx', AntiVertex:'AVx',
+  Ceres:'⚳', Pallas:'⚴', Juno:'⚵', Vesta:'⚶',
 };
+// Короткие текстовые подписи — альтернатива глифам на колесе (настройка
+// «Стиль подписей»), для тех, кому проще читать сокращения, чем символы.
+const PLANET_ABBR_RU = {
+  Sun:'Со', Moon:'Лу', Mercury:'Ме', Venus:'Ве', Mars:'Ма', Jupiter:'Юп', Saturn:'Са',
+  Uranus:'Ур', Neptune:'Не', Pluto:'Пл', Chiron:'Хи',
+  MeanNode:'Уз', TrueNode:'Уз', MeanSouthNode:'ЮУ', TrueSouthNode:'ЮУ',
+  MeanLilith:'Ли', TrueLilith:'Ли', PartOfFortune:'ЖФ', Vertex:'Vx', AntiVertex:'AV',
+  Ceres:'Цр', Pallas:'Пд', Juno:'Юн', Vesta:'Вс',
+};
+const SIGN_ABBR_RU = {
+  Aries:'Овн', Taurus:'Тлц', Gemini:'Блз', Cancer:'Рак', Leo:'Лев', Virgo:'Дев',
+  Libra:'Вес', Scorpio:'Скр', Sagittarius:'Стр', Capricorn:'Коз', Aquarius:'Вдл', Pisces:'Рыб',
+};
+// Для текстового разбора («Дома — обзор» ниже) — AntiVertex почти совпадает
+// с Vertex (та же точка с другой стороны), отдельно в списке не нужен.
+// Настройки видимости точек на колесе (isPointVisible, ближе к концу файла)
+// на текстовый разбор не влияют — это два независимых представления одних
+// и тех же данных.
+const ALWAYS_HIDDEN_POINTS = new Set(['AntiVertex']);
 const HOUSE_SYSTEM_LABEL = {
   placidus: 'Placidus', wholeSign: 'Целый знак (Whole Sign)', equal: 'Равнодомная (Equal)',
   koch: 'Koch', regiomontanus: 'Regiomontanus', campanus: 'Campanus', porphyry: 'Porphyry', alcabitius: 'Alcabitius',
@@ -706,6 +911,7 @@ const PLANET_NAME_RU = {
   MeanSouthNode: 'Южный узел (средний)', TrueSouthNode: 'Южный узел (истинный)',
   MeanLilith: 'Лилит (средняя)', TrueLilith: 'Лилит (истинная)',
   PartOfFortune: 'Парс Фортуны', Vertex: 'Вертекс', AntiVertex: 'Антивертекс',
+  Ceres: 'Церера', Pallas: 'Паллада', Juno: 'Юнона', Vesta: 'Веста',
 };
 const SIGN_NAME_RU = {
   Aries: 'Овен', Taurus: 'Телец', Gemini: 'Близнецы', Cancer: 'Рак', Leo: 'Лев', Virgo: 'Дева',
@@ -1173,7 +1379,7 @@ function buildInterpretation(data, pointHouses, houses) {
   if (timeKnown && pointHouses) {
     const rows = [];
     for (let h = 1; h <= 12; h++) {
-      const occupants = data.points.filter((p) => pointHouses[p.name] === h && !HIDDEN_FROM_WHEEL.has(p.name));
+      const occupants = data.points.filter((p) => pointHouses[p.name] === h && !ALWAYS_HIDDEN_POINTS.has(p.name));
       const names = occupants.map((p) => `${PLANET_GLYPH[p.name] || ''} ${PLANET_NAME_RU[p.name] || p.name}`).join(', ');
       rows.push(`<li><b>${h}. ${HOUSE_THEME[h].title[0].toUpperCase() + HOUSE_THEME[h].title.slice(1)}</b>${names ? ' — ' + names : ' — пусто (тема дома от этого не менее значима, просто не акцентирована конкретной планетой)'}</li>`);
     }
@@ -9791,8 +9997,212 @@ function buildChartData(moment, location, label) {
   };
 }
 
-// Показываем в колесе только точки, для которых есть смысл рисовать (без AntiVertex — почти совпадает с Vertex)
-const HIDDEN_FROM_WHEEL = new Set(['AntiVertex']);
+// ============================================================================
+// Настройки колеса — что показывать (точки, аспекты по типу, максимальный
+// орб) и как подписывать (глифы/текст). Сохраняются в localStorage, чтобы
+// не сбрасывались при перезагрузке — тот же принцип, что и у Light/Dark
+// Mode выше в этом файле.
+// ============================================================================
+const ASPECT_TYPES_ALL = ['conjunction', 'opposition', 'square', 'trine', 'sextile', 'quincunx', 'semisextile', 'semisquare', 'sesquiquadrate'];
+// Орбы по умолчанию для каждого типа аспекта — те же значения, что "мажорные
+// орбы" в движке (src/astrological/aspects.ts, defaultOrb) — так значения по
+// умолчанию в настройках колеса не расходятся с тем, что реально посчитал
+// движок при определении, является ли пара точек аспектом вообще.
+const DEFAULT_ORB_BY_TYPE = {
+  conjunction: 8, opposition: 8, square: 7, trine: 7, sextile: 5,
+  semisextile: 2, semisquare: 2, sesquiquadrate: 2, quincunx: 3,
+};
+const DEFAULT_WHEEL_SETTINGS = {
+  showChiron: true,
+  showNodes: true,
+  nodeVariant: 'mean', // 'mean' | 'true'
+  showLilith: true,
+  lilithVariant: 'mean', // 'mean' | 'true'
+  showVertex: true,
+  showPartOfFortune: true,
+  showCeres: true,
+  showPallas: true,
+  showJuno: true,
+  showVesta: true,
+  aspectTypes: Object.fromEntries(ASPECT_TYPES_ALL.map((t) => [t, true])),
+  orbByType: { ...DEFAULT_ORB_BY_TYPE },
+  labelStyle: 'glyph', // 'glyph' | 'text'
+  showAspects: true,
+  showHouses: true,
+  showDignityMarkers: true,
+  zodiacMode: 'tropical', // 'tropical' | 'sidereal' (аянамша Лахири — см. AYANAMSA_LAHIRI_* ниже)
+  accentColor: null, // null = стандартный акцент темы; иначе hex-строка
+  houseSystem: null, // null = использовать систему по умолчанию из DATA
+};
+
+function loadWheelSettings() {
+  let saved = null;
+  try {
+    const raw = localStorage.getItem('astra-wheel-settings');
+    if (raw) saved = JSON.parse(raw);
+  } catch (e) { /* приватный режим браузера или битый JSON — просто используем значения по умолчанию */ }
+  const merged = { ...DEFAULT_WHEEL_SETTINGS, ...(saved || {}) };
+  merged.aspectTypes = { ...DEFAULT_WHEEL_SETTINGS.aspectTypes, ...((saved && saved.aspectTypes) || {}) };
+  merged.orbByType = { ...DEFAULT_WHEEL_SETTINGS.orbByType, ...((saved && saved.orbByType) || {}) };
+  return merged;
+}
+
+const wheelSettings = loadWheelSettings();
+
+function saveWheelSettings() {
+  try { localStorage.setItem('astra-wheel-settings', JSON.stringify(wheelSettings)); } catch (e) { /* приватный режим — настройки просто не переживут перезагрузку */ }
+}
+
+function applyAccentColor() {
+  if (wheelSettings.accentColor) {
+    document.documentElement.style.setProperty('--wheel-accent', wheelSettings.accentColor);
+  } else {
+    document.documentElement.style.removeProperty('--wheel-accent');
+  }
+}
+applyAccentColor();
+
+// AntiVertex всегда скрыт — почти совпадает с Vertex (та же точка, взгляд
+// с другой стороны), отдельная настройка для него не нужна.
+function isPointVisible(name) {
+  if (name === 'AntiVertex') return false;
+  if (name === 'Chiron') return wheelSettings.showChiron;
+  if (name === 'Vertex') return wheelSettings.showVertex;
+  if (name === 'PartOfFortune') return wheelSettings.showPartOfFortune;
+  if (name === 'Ceres') return wheelSettings.showCeres;
+  if (name === 'Pallas') return wheelSettings.showPallas;
+  if (name === 'Juno') return wheelSettings.showJuno;
+  if (name === 'Vesta') return wheelSettings.showVesta;
+  if (name === 'MeanNode' || name === 'MeanSouthNode') return wheelSettings.showNodes && wheelSettings.nodeVariant === 'mean';
+  if (name === 'TrueNode' || name === 'TrueSouthNode') return wheelSettings.showNodes && wheelSettings.nodeVariant === 'true';
+  if (name === 'MeanLilith') return wheelSettings.showLilith && wheelSettings.lilithVariant === 'mean';
+  if (name === 'TrueLilith') return wheelSettings.showLilith && wheelSettings.lilithVariant === 'true';
+  return true; // основные планеты (Солнце—Плутон) всегда видимы
+}
+
+function isAspectVisible(asp) {
+  if (!isPointVisible(asp.a) || !isPointVisible(asp.b)) return false;
+  if (!wheelSettings.aspectTypes[asp.type]) return false;
+  const maxOrb = wheelSettings.orbByType[asp.type] ?? DEFAULT_ORB_BY_TYPE[asp.type] ?? 5;
+  if (asp.orb > maxOrb) return false;
+  return true;
+}
+
+// ----------------------------------------------------------------------
+// Тропический / сидерический зодиак. Движок считает и хранит только
+// тропическую долготу (см. src/types.ts, EclipticPoint.longitude) — это
+// осознанное архитектурное решение (см. astronomical/specialPoints.ts):
+// сидерический вид здесь честно реализован как ЧИСТО ОТОБРАЖЕНЧЕСКАЯ
+// поправка поверх тех же тропических данных, а не отдельный расчёт.
+//
+// Аянамша: используется только Лахири (наиболее распространённая —
+// официальная аянамша Индии, стандарт для джйотиш) — линейное приближение
+// от проверенного значения на J2000.0 (23°51'12", источник: Jagannatha
+// Hora) со скоростью прецессии ~50.29"/год. Другие системы (Фаган-Брэдли,
+// Кришнамурти, Раман) сознательно не добавлены: их точные константы не
+// удалось подтвердить по надёжному источнику, а показывать непроверенные
+// цифры в инструменте, который в остальном настаивает на честности данных,
+// было бы неправильно.
+// ----------------------------------------------------------------------
+const AYANAMSA_LAHIRI_J2000_DEG = 23.8533; // 23°51'12" на J2000.0 (2000-01-01 12:00 TT)
+const AYANAMSA_RATE_DEG_PER_YEAR = 50.29 / 3600;
+const J2000_MS = Date.UTC(2000, 0, 1, 12, 0, 0);
+
+function currentAyanamsaDeg() {
+  const ms = (currentBirthMoment && currentBirthMoment.utc instanceof Date) ? currentBirthMoment.utc.getTime() : J2000_MS;
+  const years = (ms - J2000_MS) / (365.25 * 86400000);
+  return AYANAMSA_LAHIRI_J2000_DEG + years * AYANAMSA_RATE_DEG_PER_YEAR;
+}
+
+function displayLongitude(tropicalLon) {
+  if (wheelSettings.zodiacMode !== 'sidereal') return tropicalLon;
+  return normalize360(tropicalLon - currentAyanamsaDeg());
+}
+
+const ZODIAC_SIGNS_ORDER = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
+function signOfLongitude(lon) { return ZODIAC_SIGNS_ORDER[Math.floor(normalize360(lon) / 30)]; }
+function degreeInSignOf(lon) { return normalize360(lon) % 30; }
+
+// Точки, у которых для отображения используется знак/градус: пересчитываем
+// клиентски из долготы (тропической или сидерической — в зависимости от
+// wheelSettings.zodiacMode), а не берём p.sign/p.degreeInSign из DATA
+// напрямую — те всегда тропические (посчитаны один раз на сервере).
+function displaySignInfo(p) {
+  const lon = displayLongitude(p.longitude);
+  return { sign: signOfLongitude(lon), degreeInSign: degreeInSignOf(lon) };
+}
+
+// Эссенциальные достоинства — копия таблиц движка (src/astrological/signs.ts,
+// essentialDignity) для клиентского пересчёта под текущий режим зодиака:
+// в сидерическом виде планета оказывается в другом знаке, поэтому её
+// достоинство тоже нужно посчитать заново, а не брать DATA.dignities
+// (тот объект всегда тропический — посчитан один раз на сервере).
+const TRADITIONAL_RULERS_JS = {
+  Aries: 'Mars', Taurus: 'Venus', Gemini: 'Mercury', Cancer: 'Moon', Leo: 'Sun',
+  Virgo: 'Mercury', Libra: 'Venus', Scorpio: 'Mars', Sagittarius: 'Jupiter',
+  Capricorn: 'Saturn', Aquarius: 'Saturn', Pisces: 'Jupiter',
+};
+const MODERN_RULERS_JS = { Scorpio: 'Pluto', Aquarius: 'Uranus', Pisces: 'Neptune' };
+const EXALTATIONS_JS = {
+  Aries: 'Sun', Taurus: 'Moon', Cancer: 'Jupiter', Virgo: 'Mercury',
+  Libra: 'Saturn', Capricorn: 'Mars', Pisces: 'Venus',
+};
+function oppositeSignJs(sign) {
+  const idx = ZODIAC_SIGNS_ORDER.indexOf(sign);
+  return ZODIAC_SIGNS_ORDER[(idx + 6) % 12];
+}
+function essentialDignityJs(planetName, lon) {
+  const sign = signOfLongitude(lon);
+  const traditionalRuler = TRADITIONAL_RULERS_JS[sign];
+  const modernRuler = MODERN_RULERS_JS[sign];
+  const ruler = modernRuler || traditionalRuler;
+  const rulership = planetName === ruler || planetName === traditionalRuler;
+  const exaltation = EXALTATIONS_JS[sign] === planetName;
+  const detrimentSign = oppositeSignJs(sign);
+  const detrimentRuler = MODERN_RULERS_JS[detrimentSign] || TRADITIONAL_RULERS_JS[detrimentSign];
+  const detriment = planetName === detrimentRuler;
+  const fallSign = Object.keys(EXALTATIONS_JS).find((s) => EXALTATIONS_JS[s] === planetName);
+  const fall = fallSign ? oppositeSignJs(fallSign) === sign : false;
+  if (rulership) return 'rulership';
+  if (exaltation) return 'exaltation';
+  if (detriment) return 'detriment';
+  if (fall) return 'fall';
+  return null;
+}
+function displayDignity(p) {
+  const lon = displayLongitude(p.longitude);
+  return essentialDignityJs(p.name, lon);
+}
+
+const DIGNITY_MARKER_GLYPH = { rulership: '⌂', exaltation: '↑', detriment: '↓', fall: '▽' };
+const DIGNITY_MARKER_COLOR = {
+  rulership: '#d4af37', exaltation: '#7fae6a', detriment: '#8b8296', fall: '#c9705a',
+};
+
+// ----------------------------------------------------------------------
+// Пресеты настроек — «Простой» (для клиента: минимум точек и аспектов)
+// и «Профессиональный» (всё включено). Каждый пресет перезаписывает разом
+// весь набор настроек видимости и сразу перерисовывает колесо.
+// ----------------------------------------------------------------------
+function applyPresetSimple() {
+  Object.assign(wheelSettings, {
+    showChiron: false, showNodes: false, showLilith: false, showVertex: false,
+    showPartOfFortune: false, showCeres: false, showPallas: false, showJuno: false, showVesta: false,
+    aspectTypes: { conjunction: true, opposition: true, square: true, trine: true, sextile: true,
+      semisextile: false, semisquare: false, sesquiquadrate: false, quincunx: false },
+    showDignityMarkers: false,
+    labelStyle: 'text',
+  });
+}
+function applyPresetProfessional() {
+  Object.assign(wheelSettings, {
+    showChiron: true, showNodes: true, showLilith: true, showVertex: true,
+    showPartOfFortune: true, showCeres: true, showPallas: true, showJuno: true, showVesta: true,
+    aspectTypes: Object.fromEntries(ASPECT_TYPES_ALL.map((t) => [t, true])),
+    showDignityMarkers: true,
+    labelStyle: 'glyph',
+  });
+}
 
 const cx = 320, cy = 320;
 const R_ZODIAC_OUT = 300, R_ZODIAC_IN = 268;
@@ -9801,10 +10211,10 @@ const R_CUSP_OUT = 268, R_CUSP_IN = 90;
 const R_PLANET = 205;
 const R_ASPECT = 175;
 
-let currentSystem = DATA.meta.houseSystemDefault;
+let currentSystem = (wheelSettings.houseSystem && DATA.housesBySystem[wheelSettings.houseSystem]) ? wheelSettings.houseSystem : DATA.meta.houseSystemDefault;
 let selectedPoint = null;
-let showAspects = true;
-let showHouses = true;
+let showAspects = wheelSettings.showAspects;
+let showHouses = wheelSettings.showHouses;
 
 const svg = document.getElementById('chart-svg');
 const houseSelect = document.getElementById('house-system-select');
@@ -9835,7 +10245,7 @@ function currentAsc() {
 
 function planetPositions() {
   const ascLon = currentAsc();
-  const visible = DATA.points.filter((p) => !HIDDEN_FROM_WHEEL.has(p.name));
+  const visible = DATA.points.filter((p) => isPointVisible(p.name));
   const sorted = [...visible].sort((a, b) => a.longitude - b.longitude);
   const placed = [];
   const MIN_GAP_DEG = 6.5; // минимальный угловой зазор между соседними планетами на кольце, иначе рисуем на разных радиусах
@@ -9860,7 +10270,8 @@ function render() {
 
   document.getElementById('chart-label').textContent = DATA.meta.label || '—';
   document.getElementById('chart-caption').textContent =
-    `Placidus и другие 7 систем доступны движку — сейчас показана: ${HOUSE_SYSTEM_LABEL[currentSystem]}${houses.reliable ? '' : ' (запасной расчёт, не полностью надёжна на этих координатах)'}`;
+    `Placidus и другие 7 систем доступны движку — сейчас показана: ${HOUSE_SYSTEM_LABEL[currentSystem]}${houses.reliable ? '' : ' (запасной расчёт, не полностью надёжна на этих координатах)'}` +
+    (wheelSettings.zodiacMode === 'sidereal' ? ' · зодиак: сидерический (аянамша Лахири)' : '');
 
   // Фон
   svg.appendChild(svgEl('circle', { cx, cy, r: R_ZODIAC_OUT + 4, fill: '#131219' }));
@@ -9869,9 +10280,16 @@ function render() {
   // окрашены в цвет стихии знака (Огонь/Земля/Воздух/Вода — см. легенду под
   // колесом) — не только фон, но и сам символ знака, чтобы связь цвет↔стихия
   // считывалась с первого взгляда, а не только по еле заметной подложке.
+  //
+  // Сидерический режим: планеты и дома остаются на тех же экранных углах
+  // (они считаны от тропической долготы — так принято, дома в сидерической
+  // астрологии, как правило, тоже тропические), а сдвигается только само
+  // кольцо знаков — на величину аянамши — так, чтобы подписи знаков
+  // совпадали с тем, что показывает Insight Panel для каждой точки.
+  const ayanamsaDeg = wheelSettings.zodiacMode === 'sidereal' ? currentAyanamsaDeg() : 0;
   for (let i = 0; i < 12; i++) {
     const signName = SIGNS[i];
-    const lonStart = i * 30, lonEnd = i * 30 + 30;
+    const lonStart = i * 30 + ayanamsaDeg, lonEnd = i * 30 + 30 + ayanamsaDeg;
     const aStart = lonToScreenAngle(lonStart, ascLon);
     const aEnd = lonToScreenAngle(lonEnd, ascLon);
     const pOutStart = polar(R_ZODIAC_OUT, aStart);
@@ -9884,8 +10302,9 @@ function render() {
     const el = svgEl('path', { d: path, class: 'zodiac-wedge', fill: elementColor, 'fill-opacity': '0.26' });
     svg.appendChild(el);
     const mid = polar((R_ZODIAC_OUT + R_ZODIAC_IN) / 2, lonToScreenAngle(lonStart + 15, ascLon));
-    const label = svgEl('text', { x: mid.x, y: mid.y, class: 'sign-label', fill: elementColor });
-    label.textContent = SIGN_GLYPH[signName];
+    const isTextStyle = wheelSettings.labelStyle === 'text';
+    const label = svgEl('text', { x: mid.x, y: mid.y, class: 'sign-label' + (isTextStyle ? ' sign-label-text' : ''), fill: elementColor });
+    label.textContent = isTextStyle ? SIGN_ABBR_RU[signName] : SIGN_GLYPH[signName];
     svg.appendChild(label);
   }
   svg.appendChild(svgEl('circle', { cx, cy, r: R_ZODIAC_IN, fill: 'none', stroke: 'var(--wheel-line-strong)', 'stroke-width': 1.6 }));
@@ -9958,6 +10377,7 @@ function render() {
   // на самой границе допустимого орба — едва заметной тонкой линией.
   if (showAspects) {
     DATA.aspects.forEach((asp) => {
+      if (!isAspectVisible(asp)) return;
       const pa = posByName[asp.a], pb = posByName[asp.b];
       if (!pa || !pb) return;
       const dim = selectedPoint && selectedPoint !== asp.a && selectedPoint !== asp.b;
@@ -9983,14 +10403,23 @@ function render() {
     const pos = posByName[p.name];
     const g = svgEl('g', { class: 'planet-dot', 'data-name': p.name });
     g.appendChild(svgEl('circle', { cx: pos.x, cy: pos.y, r: 11, fill: '#1c1b24', stroke: 'var(--border)', 'stroke-width': 1 }));
+    const isTextStyle = wheelSettings.labelStyle === 'text';
     const label = svgEl('text', { x: pos.x, y: pos.y + 5, 'text-anchor': 'middle', class: 'planet-label' + (selectedPoint === p.name ? ' selected' : '') });
-    label.textContent = PLANET_GLYPH[p.name] || p.name.slice(0, 2);
-    if ((PLANET_GLYPH[p.name] || '').length > 1) label.setAttribute('font-size', '9');
+    label.textContent = isTextStyle ? (PLANET_ABBR_RU[p.name] || p.name.slice(0, 2)) : (PLANET_GLYPH[p.name] || p.name.slice(0, 2));
+    if (isTextStyle || (PLANET_GLYPH[p.name] || '').length > 1) label.setAttribute('font-size', '9');
     g.appendChild(label);
     if (p.isRetrograde) {
       const rTag = svgEl('text', { x: pos.x + 10, y: pos.y - 8, 'font-size': '8', fill: 'var(--fire)' });
       rTag.textContent = 'R';
       g.appendChild(rTag);
+    }
+    if (wheelSettings.showDignityMarkers) {
+      const dignity = displayDignity(p);
+      if (dignity) {
+        const dTag = svgEl('text', { x: pos.x - 10, y: pos.y - 8, 'font-size': '9', fill: DIGNITY_MARKER_COLOR[dignity] });
+        dTag.textContent = DIGNITY_MARKER_GLYPH[dignity];
+        g.appendChild(dTag);
+      }
     }
     g.addEventListener('click', () => selectPoint(p.name));
     svg.appendChild(g);
@@ -10026,6 +10455,10 @@ function scrollToInterpretationParagraph(name) {
 function renderInsight(pointHouses) {
   const empty = document.getElementById('insight-empty');
   const body = document.getElementById('insight-body');
+  // если выбранная точка скрыта настройками (например, отключили Хирон,
+  // пока он был выбран) — сбрасываем выбор, а не показываем панель для
+  // точки, которой больше нет на колесе
+  if (selectedPoint && !isPointVisible(selectedPoint)) selectedPoint = null;
   if (!selectedPoint) {
     empty.style.display = 'block';
     body.classList.remove('active');
@@ -10035,15 +10468,18 @@ function renderInsight(pointHouses) {
   if (!p) return;
   empty.style.display = 'none';
   body.classList.add('active');
+  const dispSign = displaySignInfo(p);
+  const dispDignity = displayDignity(p);
   document.getElementById('insight-title').textContent = `${PLANET_GLYPH[p.name] || ''} ${PLANET_NAME_RU[p.name] || p.name}`.trim();
-  document.getElementById('insight-sub').textContent = `${SIGN_GLYPH[p.sign]} ${SIGN_NAME_RU[p.sign] || p.sign} ${p.degreeInSign.toFixed(2)}°`;
+  document.getElementById('insight-sub').textContent = `${SIGN_GLYPH[dispSign.sign]} ${SIGN_NAME_RU[dispSign.sign] || dispSign.sign} ${dispSign.degreeInSign.toFixed(2)}°` +
+    (wheelSettings.zodiacMode === 'sidereal' ? ' (сидерически, аянамша Лахири)' : '');
   document.getElementById('fact-house').textContent = pointHouses[p.name] ? `Дом ${pointHouses[p.name]}` : '—';
   document.getElementById('fact-retro').textContent = p.isRetrograde ? 'Да (R)' : 'Нет';
-  document.getElementById('fact-dignity').textContent = DATA.dignities[p.name] ? DIGNITY_LABEL[DATA.dignities[p.name]] : '—';
+  document.getElementById('fact-dignity').textContent = dispDignity ? DIGNITY_LABEL[dispDignity] : '—';
 
   const list = document.getElementById('insight-aspects');
   list.innerHTML = '';
-  const related = DATA.aspects.filter((a) => a.a === p.name || a.b === p.name);
+  const related = DATA.aspects.filter((a) => (a.a === p.name || a.b === p.name) && isAspectVisible(a));
   if (related.length === 0) {
     const li = document.createElement('li');
     li.textContent = 'Значимых аспектов не найдено.';
@@ -10066,10 +10502,201 @@ Object.keys(DATA.housesBySystem).forEach((sys) => {
   if (sys === currentSystem) opt.selected = true;
   houseSelect.appendChild(opt);
 });
-houseSelect.addEventListener('change', (e) => { currentSystem = e.target.value; render(); });
+houseSelect.addEventListener('change', (e) => {
+  currentSystem = e.target.value;
+  wheelSettings.houseSystem = e.target.value;
+  saveWheelSettings();
+  render();
+});
 
-document.getElementById('toggle-aspects').addEventListener('change', (e) => { showAspects = e.target.checked; render(); });
-document.getElementById('toggle-houses').addEventListener('change', (e) => { showHouses = e.target.checked; render(); });
+document.getElementById('toggle-aspects').addEventListener('change', (e) => {
+  showAspects = e.target.checked;
+  wheelSettings.showAspects = e.target.checked;
+  saveWheelSettings();
+  render();
+});
+document.getElementById('toggle-houses').addEventListener('change', (e) => {
+  showHouses = e.target.checked;
+  wheelSettings.showHouses = e.target.checked;
+  saveWheelSettings();
+  render();
+});
+
+// --- расширенные настройки колеса: видимость точек, True/Mean, аспекты
+// по типу, максимальный орб, стиль подписей — все читают/пишут wheelSettings
+// и сразу перерисовывают колесо + Insight Panel (если открыт) ---
+const nodeVariantRow = document.getElementById('node-variant-row');
+const lilithVariantRow = document.getElementById('lilith-variant-row');
+
+function updateSubRowState() {
+  nodeVariantRow.classList.toggle('is-disabled', !wheelSettings.showNodes);
+  lilithVariantRow.classList.toggle('is-disabled', !wheelSettings.showLilith);
+}
+
+// render() уже пересчитывает дома и вызывает renderInsight(pointHouses) в
+// конце — отдельный вызов renderInsight здесь не нужен.
+const rerenderWheelAndInsight = render;
+
+// точки
+document.getElementById('toggle-chiron').checked = wheelSettings.showChiron;
+document.getElementById('toggle-chiron').addEventListener('change', (e) => {
+  wheelSettings.showChiron = e.target.checked; saveWheelSettings(); rerenderWheelAndInsight();
+});
+
+document.getElementById('toggle-nodes').checked = wheelSettings.showNodes;
+document.getElementById('toggle-nodes').addEventListener('change', (e) => {
+  wheelSettings.showNodes = e.target.checked; saveWheelSettings(); updateSubRowState(); rerenderWheelAndInsight();
+});
+document.getElementById('node-variant-select').value = wheelSettings.nodeVariant;
+document.getElementById('node-variant-select').addEventListener('change', (e) => {
+  wheelSettings.nodeVariant = e.target.value; saveWheelSettings(); rerenderWheelAndInsight();
+});
+
+document.getElementById('toggle-lilith').checked = wheelSettings.showLilith;
+document.getElementById('toggle-lilith').addEventListener('change', (e) => {
+  wheelSettings.showLilith = e.target.checked; saveWheelSettings(); updateSubRowState(); rerenderWheelAndInsight();
+});
+document.getElementById('lilith-variant-select').value = wheelSettings.lilithVariant;
+document.getElementById('lilith-variant-select').addEventListener('change', (e) => {
+  wheelSettings.lilithVariant = e.target.value; saveWheelSettings(); rerenderWheelAndInsight();
+});
+
+document.getElementById('toggle-vertex').checked = wheelSettings.showVertex;
+document.getElementById('toggle-vertex').addEventListener('change', (e) => {
+  wheelSettings.showVertex = e.target.checked; saveWheelSettings(); rerenderWheelAndInsight();
+});
+
+document.getElementById('toggle-pof').checked = wheelSettings.showPartOfFortune;
+document.getElementById('toggle-pof').addEventListener('change', (e) => {
+  wheelSettings.showPartOfFortune = e.target.checked; saveWheelSettings(); rerenderWheelAndInsight();
+});
+
+// астероиды (Церера/Паллада/Юнона/Веста) — четыре одинаковых переключателя,
+// без варианта mean/true (в отличие от узла и Лилит — тут его нет)
+[['toggle-ceres', 'showCeres'], ['toggle-pallas', 'showPallas'], ['toggle-juno', 'showJuno'], ['toggle-vesta', 'showVesta']].forEach(([id, key]) => {
+  const el = document.getElementById(id);
+  el.checked = wheelSettings[key];
+  el.addEventListener('change', (e) => {
+    wheelSettings[key] = e.target.checked; saveWheelSettings(); rerenderWheelAndInsight();
+  });
+});
+
+updateSubRowState();
+
+// зодиак: тропический/сидерический (аянамша Лахири — см. комментарий у
+// currentAyanamsaDeg выше)
+document.getElementById('zodiac-mode-select').value = wheelSettings.zodiacMode;
+document.getElementById('zodiac-mode-select').addEventListener('change', (e) => {
+  wheelSettings.zodiacMode = e.target.value; saveWheelSettings(); rerenderWheelAndInsight();
+});
+
+// значки достоинств планет на колесе
+document.getElementById('toggle-dignity-markers').checked = wheelSettings.showDignityMarkers;
+document.getElementById('toggle-dignity-markers').addEventListener('change', (e) => {
+  wheelSettings.showDignityMarkers = e.target.checked; saveWheelSettings(); rerenderWheelAndInsight();
+});
+
+// акцентный цвет колеса — своя настройка поверх темы (Light/Dark), см. applyAccentColor()
+const accentColorInput = document.getElementById('accent-color-input');
+accentColorInput.value = wheelSettings.accentColor || '#c9a15a';
+accentColorInput.addEventListener('input', (e) => {
+  wheelSettings.accentColor = e.target.value;
+  applyAccentColor();
+  saveWheelSettings();
+});
+document.getElementById('accent-color-reset').addEventListener('click', () => {
+  wheelSettings.accentColor = null;
+  accentColorInput.value = '#c9a15a';
+  applyAccentColor();
+  saveWheelSettings();
+});
+
+// пресеты «Простой» / «Профессиональный» — перезаписывают разом весь
+// набор настроек видимости, затем синхронизируют DOM-контролы с новым
+// состоянием (та же функция инициализации, что ниже используется при
+// загрузке страницы) и перерисовывают колесо
+function syncSettingsControlsFromState() {
+  document.getElementById('toggle-chiron').checked = wheelSettings.showChiron;
+  document.getElementById('toggle-nodes').checked = wheelSettings.showNodes;
+  document.getElementById('node-variant-select').value = wheelSettings.nodeVariant;
+  document.getElementById('toggle-lilith').checked = wheelSettings.showLilith;
+  document.getElementById('lilith-variant-select').value = wheelSettings.lilithVariant;
+  document.getElementById('toggle-vertex').checked = wheelSettings.showVertex;
+  document.getElementById('toggle-pof').checked = wheelSettings.showPartOfFortune;
+  document.getElementById('toggle-ceres').checked = wheelSettings.showCeres;
+  document.getElementById('toggle-pallas').checked = wheelSettings.showPallas;
+  document.getElementById('toggle-juno').checked = wheelSettings.showJuno;
+  document.getElementById('toggle-vesta').checked = wheelSettings.showVesta;
+  document.getElementById('toggle-dignity-markers').checked = wheelSettings.showDignityMarkers;
+  document.getElementById('label-style-select').value = wheelSettings.labelStyle;
+  updateSubRowState();
+  [...aspectChipsEl.querySelectorAll('.aspect-chip')].forEach((chipEl) => {
+    const type = chipEl.dataset.type;
+    const cb = chipEl.querySelector('input[type=checkbox]');
+    const orbInput = chipEl.querySelector('input[type=number]');
+    cb.checked = wheelSettings.aspectTypes[type];
+    chipEl.classList.toggle('is-off', !cb.checked);
+    orbInput.value = wheelSettings.orbByType[type];
+  });
+}
+document.getElementById('preset-simple').addEventListener('click', () => {
+  applyPresetSimple(); saveWheelSettings(); syncSettingsControlsFromState(); rerenderWheelAndInsight();
+});
+document.getElementById('preset-professional').addEventListener('click', () => {
+  applyPresetProfessional(); saveWheelSettings(); syncSettingsControlsFromState(); rerenderWheelAndInsight();
+});
+
+// аспекты по типу — чипы: чекбокс включения + число (орб в градусах) для
+// каждого из 9 типов аспектов, вместо одного общего ползунка орба
+const aspectChipsEl = document.getElementById('aspect-type-chips');
+ASPECT_TYPES_ALL.forEach((type) => {
+  const label = document.createElement('label');
+  label.className = 'aspect-chip' + (wheelSettings.aspectTypes[type] ? '' : ' is-off');
+  label.dataset.type = type;
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.checked = wheelSettings.aspectTypes[type];
+  cb.addEventListener('change', () => {
+    wheelSettings.aspectTypes[type] = cb.checked;
+    label.classList.toggle('is-off', !cb.checked);
+    saveWheelSettings();
+    rerenderWheelAndInsight();
+  });
+  const span = document.createElement('span');
+  span.textContent = ASPECT_NAME_RU[type] || type;
+  const orbInput = document.createElement('input');
+  orbInput.type = 'number';
+  orbInput.className = 'aspect-chip-orb';
+  orbInput.min = '0';
+  orbInput.max = '15';
+  orbInput.step = '0.5';
+  orbInput.value = wheelSettings.orbByType[type];
+  orbInput.title = 'Максимальный орб для этого типа аспекта, °';
+  orbInput.addEventListener('click', (e) => e.stopPropagation()); // не переключать чекбокс кликом по числу
+  orbInput.addEventListener('change', () => {
+    const v = Number(orbInput.value);
+    wheelSettings.orbByType[type] = Number.isFinite(v) ? Math.max(0, v) : DEFAULT_ORB_BY_TYPE[type];
+    saveWheelSettings();
+    rerenderWheelAndInsight();
+  });
+  label.appendChild(cb);
+  label.appendChild(span);
+  label.appendChild(orbInput);
+  aspectChipsEl.appendChild(label);
+});
+
+document.getElementById('reset-orbs-btn').addEventListener('click', () => {
+  wheelSettings.orbByType = { ...DEFAULT_ORB_BY_TYPE };
+  syncSettingsControlsFromState();
+  saveWheelSettings();
+  rerenderWheelAndInsight();
+});
+
+// стиль подписей
+document.getElementById('label-style-select').value = wheelSettings.labelStyle;
+document.getElementById('label-style-select').addEventListener('change', (e) => {
+  wheelSettings.labelStyle = e.target.value; saveWheelSettings(); render();
+});
 
 // --- форма "Твои данные" (расчёт настоящей карты в браузере) ---
 // В базе больше 8000 городов (Россия, Украина, Беларусь почти полностью +
@@ -10276,7 +10903,9 @@ document.getElementById('calc-btn').addEventListener('click', () => {
       : `Твоя натальная карта (время неизвестно) — ${dateLabel}, ${location.label}`;
 
     DATA = buildChartData(moment, location, label);
-    currentSystem = DATA.meta.houseSystemDefault;
+    // сохранённая система домов (если есть) переживает пересчёт карты — не
+    // только перезагрузку страницы
+    currentSystem = (wheelSettings.houseSystem && DATA.housesBySystem[wheelSettings.houseSystem]) ? wheelSettings.houseSystem : DATA.meta.houseSystemDefault;
     selectedPoint = null;
     currentBirthMoment = moment;
     currentBirthLocation = location;
