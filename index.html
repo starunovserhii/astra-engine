@@ -83,6 +83,12 @@
     padding: 1rem;
     position: relative;
   }
+  #chart-label {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.85rem;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
   .chart-toolbar {
     display: flex;
     justify-content: space-between;
@@ -171,6 +177,27 @@
   input:checked + .slider-track { border-color: var(--accent-dim); }
   input:checked + .slider-track::before { transform: translateX(16px); background: var(--accent); }
 
+  .form-row { margin-bottom: 0.65rem; font-size: 0.83rem; color: var(--text-dim); }
+  .form-row label { display: block; margin-bottom: 0.28rem; }
+  .form-row input[type=date], .form-row input[type=time], .form-row input[type=text],
+  .form-row input[type=number], .form-row select {
+    width: 100%; background: var(--bg-panel-2); color: var(--text); border: 1px solid var(--border);
+    border-radius: 4px; padding: 0.42rem 0.5rem; font-size: 0.85rem; font-family: inherit;
+  }
+  .form-check label { display: flex; align-items: center; gap: 0.45rem; cursor: pointer; }
+  .form-check input { width: auto; margin: 0; }
+  #manual-fields { border-top: 1px dashed var(--border); padding-top: 0.6rem; margin-top: 0.2rem; }
+  .calc-btn {
+    width: 100%; background: var(--accent-dim); color: #0e0d12; border: none; border-radius: 6px;
+    padding: 0.65rem; font-size: 0.9rem; font-weight: 600; cursor: pointer; margin-top: 0.3rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  .calc-btn:hover { background: var(--accent); }
+  .calc-btn:disabled { opacity: 0.6; cursor: default; }
+  .calc-status { font-size: 0.78rem; color: var(--text-dim); margin: 0.55rem 0 0; min-height: 1em; line-height: 1.5; }
+  .calc-status.error { color: #d98a76; }
+  .calc-status.ok { color: #8fa9c0; }
+
   #insight-empty { color: var(--text-dim); font-size: 0.85rem; line-height: 1.5; }
   #insight-body { display: none; }
   #insight-body.active { display: block; }
@@ -206,7 +233,7 @@
 
 <header>
   <h1>ASTRA Engine</h1>
-  <p class="subtitle">Собственный расчётный астрологический движок (TypeScript, MIT). Ниже — живая демонстрация на условном примере карты: колесо интерактивно, можно переключать систему домов, наводить и кликать на планеты, включать и выключать аспекты.</p>
+  <p class="subtitle">Собственный расчётный астрологический движок (TypeScript, MIT). Ниже показан пример карты, но расчёт настоящий: введи свою дату, время и место рождения в форме «Твои данные» — движок посчитает твою карту прямо в браузере, без сервера. Колесо интерактивно: переключай систему домов, наводи и кликай на планеты, включай и выключай аспекты.</p>
   <div class="links">
     <a href="https://github.com/starunovserhii/astra-engine">Код на GitHub</a>
     <a href="https://github.com/starunovserhii/astra-engine#readme">README / архитектура</a>
@@ -215,6 +242,7 @@
 
 <main>
   <div class="chart-panel">
+    <div id="chart-label">—</div>
     <div class="chart-toolbar">
       <span id="chart-caption">—</span>
       <span class="zoom-controls">
@@ -229,6 +257,45 @@
   </div>
 
   <aside>
+    <div class="panel">
+      <h2>Твои данные</h2>
+      <div class="form-row">
+        <label for="birth-date">Дата рождения</label>
+        <input type="date" id="birth-date" value="1990-06-15">
+      </div>
+      <div class="form-row">
+        <label for="birth-time">Время рождения (местное)</label>
+        <input type="time" id="birth-time" value="08:30">
+      </div>
+      <div class="form-row form-check">
+        <label><input type="checkbox" id="time-unknown"> Точное время неизвестно</label>
+      </div>
+      <div class="form-row">
+        <label for="birth-city">Город рождения</label>
+        <input type="text" id="birth-city" list="city-list" placeholder="Начни вводить название…" value="Москва">
+        <datalist id="city-list"></datalist>
+      </div>
+      <div class="form-row form-check">
+        <label><input type="checkbox" id="manual-toggle"> Не нашли город — указать вручную</label>
+      </div>
+      <div id="manual-fields" style="display:none;">
+        <div class="form-row">
+          <label for="manual-lat">Широта (градусы, юг — отрицательные)</label>
+          <input type="number" id="manual-lat" step="0.0001" placeholder="напр. 55.7558">
+        </div>
+        <div class="form-row">
+          <label for="manual-lon">Долгота (градусы, запад — отрицательные)</label>
+          <input type="number" id="manual-lon" step="0.0001" placeholder="напр. 37.6173">
+        </div>
+        <div class="form-row">
+          <label for="manual-tz">Часовой пояс</label>
+          <select id="manual-tz"></select>
+        </div>
+      </div>
+      <button id="calc-btn" class="calc-btn" type="button">Построить карту</button>
+      <p id="calc-status" class="calc-status"></p>
+    </div>
+
     <div class="panel">
       <h2>Настройки</h2>
       <div class="control-row">
@@ -265,7 +332,8 @@
     </div>
 
     <div class="panel">
-      <p class="warn-note">Пример условный (не реальные данные клиента) — демонстрирует расчёт, а не интерпретацию. Движок отдаёт только числа и их источник; текстовые толкования — задача отдельного AI-слоя поверх этого API (см. README, §«Архитектура»).</p>
+      <p class="warn-note" id="warn-note">Пример условный (не реальные данные клиента) — демонстрирует расчёт, а не интерпретацию. Движок отдаёт только числа и их источник; текстовые толкования — задача отдельного AI-слоя поверх этого API (см. README, §«Архитектура»).</p>
+      <p class="warn-note" id="engine-warnings" style="display:none;"></p>
     </div>
   </aside>
 </main>
@@ -274,8 +342,9 @@
   ASTRA Engine · MIT License · <a href="https://github.com/starunovserhii/astra-engine">github.com/starunovserhii/astra-engine</a>
 </footer>
 
+<script src="astra-engine.bundle.js"></script>
 <script>
-const DATA = {"meta":{"label":"Пример натальной карты — демонстрация ASTRA Engine (условные данные, 15.06.1990, 08:30, Москва)","engineVersion":"0.1.0","houseSystemDefault":"placidus"},"points":[{"name":"Sun","longitude":83.9901,"sign":"Gemini","degreeInSign":23.99,"isRetrograde":false},{"name":"Moon","longitude":343.4135,"sign":"Pisces","degreeInSign":13.41,"isRetrograde":false},{"name":"Mercury","longitude":65.441,"sign":"Gemini","degreeInSign":5.44,"isRetrograde":false},{"name":"Venus","longitude":48.6059,"sign":"Taurus","degreeInSign":18.61,"isRetrograde":false},{"name":"Mars","longitude":10.9362,"sign":"Aries","degreeInSign":10.94,"isRetrograde":false},{"name":"Jupiter","longitude":105.8579,"sign":"Cancer","degreeInSign":15.86,"isRetrograde":false},{"name":"Saturn","longitude":294.0404,"sign":"Capricorn","degreeInSign":24.04,"isRetrograde":true},{"name":"Uranus","longitude":278.1696,"sign":"Capricorn","degreeInSign":8.17,"isRetrograde":true},{"name":"Neptune","longitude":283.7205,"sign":"Capricorn","degreeInSign":13.72,"isRetrograde":true},{"name":"Pluto","longitude":225.4051,"sign":"Scorpio","degreeInSign":15.41,"isRetrograde":true},{"name":"Chiron","longitude":43.216,"sign":"Taurus","degreeInSign":13.22,"isRetrograde":false},{"name":"MeanNode","longitude":309.702,"sign":"Aquarius","degreeInSign":9.7,"isRetrograde":true},{"name":"MeanSouthNode","longitude":129.702,"sign":"Leo","degreeInSign":9.7,"isRetrograde":true},{"name":"TrueNode","longitude":307.9205,"sign":"Aquarius","degreeInSign":7.92,"isRetrograde":true},{"name":"TrueSouthNode","longitude":127.9205,"sign":"Leo","degreeInSign":7.92,"isRetrograde":true},{"name":"MeanLilith","longitude":234.8729,"sign":"Scorpio","degreeInSign":24.87,"isRetrograde":false},{"name":"TrueLilith","longitude":231.1546,"sign":"Scorpio","degreeInSign":21.15,"isRetrograde":false},{"name":"Vertex","longitude":327.8151,"sign":"Aquarius","degreeInSign":27.82,"isRetrograde":false},{"name":"AntiVertex","longitude":147.8151,"sign":"Leo","degreeInSign":27.82,"isRetrograde":false},{"name":"PartOfFortune","longitude":65.1151,"sign":"Gemini","degreeInSign":5.12,"isRetrograde":false}],"dignities":{"Mercury":"rulership","Venus":"rulership","Mars":"rulership","Jupiter":"exaltation","Saturn":"rulership","Pluto":"rulership"},"aspects":[{"a":"Sun","b":"Saturn","type":"quincunx","orb":0.05,"applying":true},{"a":"Sun","b":"MeanNode","type":"sesquiquadrate","orb":0.71,"applying":true},{"a":"Sun","b":"MeanSouthNode","type":"semisquare","orb":0.71,"applying":true},{"a":"Sun","b":"TrueNode","type":"sesquiquadrate","orb":1.07,"applying":false},{"a":"Sun","b":"TrueSouthNode","type":"semisquare","orb":1.07,"applying":false},{"a":"Sun","b":"MeanLilith","type":"quincunx","orb":0.88,"applying":true},{"a":"Sun","b":"TrueLilith","type":"quincunx","orb":2.84,"applying":false},{"a":"Sun","b":"Vertex","type":"trine","orb":3.82,"applying":true},{"a":"Sun","b":"AntiVertex","type":"sextile","orb":3.82,"applying":true},{"a":"Moon","b":"Mercury","type":"square","orb":7.97,"applying":false},{"a":"Moon","b":"Venus","type":"sextile","orb":5.19,"applying":true},{"a":"Moon","b":"Mars","type":"semisextile","orb":2.48,"applying":false},{"a":"Moon","b":"Jupiter","type":"trine","orb":2.44,"applying":true},{"a":"Moon","b":"Uranus","type":"sextile","orb":5.24,"applying":false},{"a":"Moon","b":"Neptune","type":"sextile","orb":0.31,"applying":true},{"a":"Moon","b":"Pluto","type":"trine","orb":1.99,"applying":true},{"a":"Moon","b":"Chiron","type":"sextile","orb":0.2,"applying":false},{"a":"Moon","b":"MeanNode","type":"semisextile","orb":3.71,"applying":false},{"a":"Moon","b":"MeanSouthNode","type":"quincunx","orb":3.71,"applying":false},{"a":"Moon","b":"TrueLilith","type":"trine","orb":7.74,"applying":true},{"a":"Moon","b":"PartOfFortune","type":"square","orb":8.3,"applying":false},{"a":"Mercury","b":"Uranus","type":"quincunx","orb":2.73,"applying":true},{"a":"Mercury","b":"MeanNode","type":"trine","orb":4.26,"applying":true},{"a":"Mercury","b":"MeanSouthNode","type":"sextile","orb":4.26,"applying":true},{"a":"Mercury","b":"TrueNode","type":"trine","orb":2.48,"applying":true},{"a":"Mercury","b":"TrueSouthNode","type":"sextile","orb":2.48,"applying":true},{"a":"Mercury","b":"PartOfFortune","type":"conjunction","orb":0.33,"applying":false},{"a":"Venus","b":"Jupiter","type":"sextile","orb":2.75,"applying":false},{"a":"Venus","b":"Saturn","type":"trine","orb":5.43,"applying":true},{"a":"Venus","b":"Neptune","type":"trine","orb":4.89,"applying":false},{"a":"Venus","b":"Pluto","type":"opposition","orb":3.2,"applying":false},{"a":"Venus","b":"Chiron","type":"conjunction","orb":5.39,"applying":false},{"a":"Venus","b":"MeanLilith","type":"opposition","orb":6.27,"applying":true},{"a":"Venus","b":"TrueLilith","type":"opposition","orb":2.55,"applying":true},{"a":"Mars","b":"Jupiter","type":"square","orb":4.92,"applying":true},{"a":"Mars","b":"Uranus","type":"square","orb":2.77,"applying":false},{"a":"Mars","b":"Neptune","type":"square","orb":2.78,"applying":true},{"a":"Mars","b":"MeanNode","type":"sextile","orb":1.23,"applying":false},{"a":"Mars","b":"MeanSouthNode","type":"trine","orb":1.23,"applying":false},{"a":"Mars","b":"TrueNode","type":"sextile","orb":3.02,"applying":false},{"a":"Mars","b":"TrueSouthNode","type":"trine","orb":3.02,"applying":false},{"a":"Mars","b":"MeanLilith","type":"sesquiquadrate","orb":1.06,"applying":false},{"a":"Mars","b":"Vertex","type":"semisquare","orb":1.88,"applying":true},{"a":"Mars","b":"AntiVertex","type":"sesquiquadrate","orb":1.88,"applying":true},{"a":"Jupiter","b":"Uranus","type":"opposition","orb":7.69,"applying":false},{"a":"Jupiter","b":"Neptune","type":"opposition","orb":2.14,"applying":false},{"a":"Jupiter","b":"Pluto","type":"trine","orb":0.45,"applying":false},{"a":"Jupiter","b":"Chiron","type":"sextile","orb":2.64,"applying":false},{"a":"Jupiter","b":"TrueLilith","type":"trine","orb":5.3,"applying":true},{"a":"Saturn","b":"MeanLilith","type":"sextile","orb":0.83,"applying":false},{"a":"Saturn","b":"TrueLilith","type":"sextile","orb":2.89,"applying":true},{"a":"Uranus","b":"Neptune","type":"conjunction","orb":5.55,"applying":false},{"a":"Uranus","b":"Chiron","type":"trine","orb":5.05,"applying":false},{"a":"Uranus","b":"MeanNode","type":"semisextile","orb":1.53,"applying":true},{"a":"Uranus","b":"MeanSouthNode","type":"quincunx","orb":1.53,"applying":true},{"a":"Uranus","b":"TrueNode","type":"semisextile","orb":0.25,"applying":false},{"a":"Uranus","b":"TrueSouthNode","type":"quincunx","orb":0.25,"applying":false},{"a":"Uranus","b":"MeanLilith","type":"semisquare","orb":1.7,"applying":false},{"a":"Neptune","b":"Pluto","type":"sextile","orb":1.68,"applying":false},{"a":"Neptune","b":"Chiron","type":"trine","orb":0.5,"applying":true},{"a":"Neptune","b":"Vertex","type":"semisquare","orb":0.91,"applying":true},{"a":"Neptune","b":"AntiVertex","type":"sesquiquadrate","orb":0.91,"applying":true},{"a":"Pluto","b":"Chiron","type":"opposition","orb":2.19,"applying":true},{"a":"Pluto","b":"MeanNode","type":"square","orb":5.7,"applying":false},{"a":"Pluto","b":"MeanSouthNode","type":"square","orb":5.7,"applying":false},{"a":"Pluto","b":"TrueLilith","type":"conjunction","orb":5.75,"applying":false},{"a":"Chiron","b":"MeanNode","type":"square","orb":3.51,"applying":false},{"a":"Chiron","b":"MeanSouthNode","type":"square","orb":3.51,"applying":false},{"a":"Chiron","b":"TrueNode","type":"square","orb":5.3,"applying":false},{"a":"Chiron","b":"TrueSouthNode","type":"square","orb":5.3,"applying":false},{"a":"Chiron","b":"TrueLilith","type":"opposition","orb":7.94,"applying":false},{"a":"MeanNode","b":"MeanSouthNode","type":"opposition","orb":0,"applying":false},{"a":"MeanNode","b":"TrueNode","type":"conjunction","orb":1.78,"applying":true},{"a":"MeanNode","b":"TrueSouthNode","type":"opposition","orb":1.78,"applying":true},{"a":"MeanNode","b":"PartOfFortune","type":"trine","orb":4.59,"applying":true},{"a":"MeanSouthNode","b":"TrueNode","type":"opposition","orb":1.78,"applying":true},{"a":"MeanSouthNode","b":"TrueSouthNode","type":"conjunction","orb":1.78,"applying":true},{"a":"MeanSouthNode","b":"PartOfFortune","type":"sextile","orb":4.59,"applying":true},{"a":"TrueNode","b":"TrueSouthNode","type":"opposition","orb":0,"applying":false},{"a":"TrueNode","b":"PartOfFortune","type":"trine","orb":2.81,"applying":true},{"a":"TrueSouthNode","b":"PartOfFortune","type":"sextile","orb":2.81,"applying":true},{"a":"MeanLilith","b":"TrueLilith","type":"conjunction","orb":3.72,"applying":true},{"a":"MeanLilith","b":"Vertex","type":"square","orb":2.94,"applying":true},{"a":"MeanLilith","b":"AntiVertex","type":"square","orb":2.94,"applying":true},{"a":"TrueLilith","b":"Vertex","type":"square","orb":6.66,"applying":true},{"a":"TrueLilith","b":"AntiVertex","type":"square","orb":6.66,"applying":true},{"a":"Vertex","b":"AntiVertex","type":"opposition","orb":0,"applying":false}],"housesBySystem":{"placidus":{"cusps":[165.6917,186.4906,214.1813,250.1173,289.0991,320.9835,345.6917,6.4906,34.1813,70.1173,109.0991,140.9835],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"wholeSign":{"cusps":[150,180,210,240,270,300,330,0,30,60,90,120],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"equal":{"cusps":[165.6917,195.6917,225.6917,255.6917,285.6917,315.6917,345.6917,15.6917,45.6917,75.6917,105.6917,135.6917],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"koch":{"cusps":[165.6917,193.7004,221.4863,250.1173,289.2153,317.9103,345.6917,13.7004,41.4863,70.1173,109.2153,137.9103],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"regiomontanus":{"cusps":[165.6917,185.9604,211.6322,250.1173,293.3777,323.9902,345.6917,5.9604,31.6322,70.1173,113.3777,143.9902],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"campanus":{"cusps":[165.6917,198.2422,225.2669,250.1173,277.1009,309.5936,345.6917,18.2422,45.2669,70.1173,97.1009,129.5936],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"porphyry":{"cusps":[165.6917,193.8336,221.9754,250.1173,281.9754,313.8336,345.6917,13.8336,41.9754,70.1173,101.9754,133.8336],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"alcabitius":{"cusps":[165.6917,183.1864,218.0738,250.1173,280.3584,311.5887,345.6917,3.1864,38.0738,70.1173,100.3584,131.5887],"ascendant":165.6917,"midheaven":70.1173,"reliable":true}},"pointHousesBySystem":{"placidus":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":8,"Jupiter":10,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"wholeSign":{"Sun":10,"Moon":7,"Mercury":10,"Venus":9,"Mars":8,"Jupiter":11,"Saturn":5,"Uranus":5,"Neptune":5,"Pluto":3,"Chiron":9,"MeanNode":6,"MeanSouthNode":12,"TrueNode":6,"TrueSouthNode":12,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":10},"equal":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":11,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":2,"Chiron":8,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"koch":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":10,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"regiomontanus":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":8,"Jupiter":10,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"campanus":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":11,"Saturn":5,"Uranus":5,"Neptune":5,"Pluto":3,"Chiron":8,"MeanNode":6,"MeanSouthNode":12,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"porphyry":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":11,"Saturn":5,"Uranus":4,"Neptune":5,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"alcabitius":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":8,"Jupiter":11,"Saturn":5,"Uranus":4,"Neptune":5,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9}}};
+let DATA = {"meta":{"label":"Пример натальной карты — демонстрация ASTRA Engine (условные данные, 15.06.1990, 08:30, Москва)","engineVersion":"0.1.0","houseSystemDefault":"placidus"},"points":[{"name":"Sun","longitude":83.9901,"sign":"Gemini","degreeInSign":23.99,"isRetrograde":false},{"name":"Moon","longitude":343.4135,"sign":"Pisces","degreeInSign":13.41,"isRetrograde":false},{"name":"Mercury","longitude":65.441,"sign":"Gemini","degreeInSign":5.44,"isRetrograde":false},{"name":"Venus","longitude":48.6059,"sign":"Taurus","degreeInSign":18.61,"isRetrograde":false},{"name":"Mars","longitude":10.9362,"sign":"Aries","degreeInSign":10.94,"isRetrograde":false},{"name":"Jupiter","longitude":105.8579,"sign":"Cancer","degreeInSign":15.86,"isRetrograde":false},{"name":"Saturn","longitude":294.0404,"sign":"Capricorn","degreeInSign":24.04,"isRetrograde":true},{"name":"Uranus","longitude":278.1696,"sign":"Capricorn","degreeInSign":8.17,"isRetrograde":true},{"name":"Neptune","longitude":283.7205,"sign":"Capricorn","degreeInSign":13.72,"isRetrograde":true},{"name":"Pluto","longitude":225.4051,"sign":"Scorpio","degreeInSign":15.41,"isRetrograde":true},{"name":"Chiron","longitude":43.216,"sign":"Taurus","degreeInSign":13.22,"isRetrograde":false},{"name":"MeanNode","longitude":309.702,"sign":"Aquarius","degreeInSign":9.7,"isRetrograde":true},{"name":"MeanSouthNode","longitude":129.702,"sign":"Leo","degreeInSign":9.7,"isRetrograde":true},{"name":"TrueNode","longitude":307.9205,"sign":"Aquarius","degreeInSign":7.92,"isRetrograde":true},{"name":"TrueSouthNode","longitude":127.9205,"sign":"Leo","degreeInSign":7.92,"isRetrograde":true},{"name":"MeanLilith","longitude":234.8729,"sign":"Scorpio","degreeInSign":24.87,"isRetrograde":false},{"name":"TrueLilith","longitude":231.1546,"sign":"Scorpio","degreeInSign":21.15,"isRetrograde":false},{"name":"Vertex","longitude":327.8151,"sign":"Aquarius","degreeInSign":27.82,"isRetrograde":false},{"name":"AntiVertex","longitude":147.8151,"sign":"Leo","degreeInSign":27.82,"isRetrograde":false},{"name":"PartOfFortune","longitude":65.1151,"sign":"Gemini","degreeInSign":5.12,"isRetrograde":false}],"dignities":{"Mercury":"rulership","Venus":"rulership","Mars":"rulership","Jupiter":"exaltation","Saturn":"rulership","Pluto":"rulership"},"aspects":[{"a":"Sun","b":"Saturn","type":"quincunx","orb":0.05,"applying":true},{"a":"Sun","b":"MeanNode","type":"sesquiquadrate","orb":0.71,"applying":true},{"a":"Sun","b":"MeanSouthNode","type":"semisquare","orb":0.71,"applying":true},{"a":"Sun","b":"TrueNode","type":"sesquiquadrate","orb":1.07,"applying":false},{"a":"Sun","b":"TrueSouthNode","type":"semisquare","orb":1.07,"applying":false},{"a":"Sun","b":"MeanLilith","type":"quincunx","orb":0.88,"applying":true},{"a":"Sun","b":"TrueLilith","type":"quincunx","orb":2.84,"applying":false},{"a":"Sun","b":"Vertex","type":"trine","orb":3.82,"applying":true},{"a":"Sun","b":"AntiVertex","type":"sextile","orb":3.82,"applying":true},{"a":"Moon","b":"Mercury","type":"square","orb":7.97,"applying":false},{"a":"Moon","b":"Venus","type":"sextile","orb":5.19,"applying":true},{"a":"Moon","b":"Mars","type":"semisextile","orb":2.48,"applying":false},{"a":"Moon","b":"Jupiter","type":"trine","orb":2.44,"applying":true},{"a":"Moon","b":"Uranus","type":"sextile","orb":5.24,"applying":false},{"a":"Moon","b":"Neptune","type":"sextile","orb":0.31,"applying":true},{"a":"Moon","b":"Pluto","type":"trine","orb":1.99,"applying":true},{"a":"Moon","b":"Chiron","type":"sextile","orb":0.2,"applying":false},{"a":"Moon","b":"MeanNode","type":"semisextile","orb":3.71,"applying":false},{"a":"Moon","b":"MeanSouthNode","type":"quincunx","orb":3.71,"applying":false},{"a":"Moon","b":"TrueLilith","type":"trine","orb":7.74,"applying":true},{"a":"Moon","b":"PartOfFortune","type":"square","orb":8.3,"applying":false},{"a":"Mercury","b":"Uranus","type":"quincunx","orb":2.73,"applying":true},{"a":"Mercury","b":"MeanNode","type":"trine","orb":4.26,"applying":true},{"a":"Mercury","b":"MeanSouthNode","type":"sextile","orb":4.26,"applying":true},{"a":"Mercury","b":"TrueNode","type":"trine","orb":2.48,"applying":true},{"a":"Mercury","b":"TrueSouthNode","type":"sextile","orb":2.48,"applying":true},{"a":"Mercury","b":"PartOfFortune","type":"conjunction","orb":0.33,"applying":false},{"a":"Venus","b":"Jupiter","type":"sextile","orb":2.75,"applying":false},{"a":"Venus","b":"Saturn","type":"trine","orb":5.43,"applying":true},{"a":"Venus","b":"Neptune","type":"trine","orb":4.89,"applying":false},{"a":"Venus","b":"Pluto","type":"opposition","orb":3.2,"applying":false},{"a":"Venus","b":"Chiron","type":"conjunction","orb":5.39,"applying":false},{"a":"Venus","b":"MeanLilith","type":"opposition","orb":6.27,"applying":true},{"a":"Venus","b":"TrueLilith","type":"opposition","orb":2.55,"applying":true},{"a":"Mars","b":"Jupiter","type":"square","orb":4.92,"applying":true},{"a":"Mars","b":"Uranus","type":"square","orb":2.77,"applying":false},{"a":"Mars","b":"Neptune","type":"square","orb":2.78,"applying":true},{"a":"Mars","b":"MeanNode","type":"sextile","orb":1.23,"applying":false},{"a":"Mars","b":"MeanSouthNode","type":"trine","orb":1.23,"applying":false},{"a":"Mars","b":"TrueNode","type":"sextile","orb":3.02,"applying":false},{"a":"Mars","b":"TrueSouthNode","type":"trine","orb":3.02,"applying":false},{"a":"Mars","b":"MeanLilith","type":"sesquiquadrate","orb":1.06,"applying":false},{"a":"Mars","b":"Vertex","type":"semisquare","orb":1.88,"applying":true},{"a":"Mars","b":"AntiVertex","type":"sesquiquadrate","orb":1.88,"applying":true},{"a":"Jupiter","b":"Uranus","type":"opposition","orb":7.69,"applying":false},{"a":"Jupiter","b":"Neptune","type":"opposition","orb":2.14,"applying":false},{"a":"Jupiter","b":"Pluto","type":"trine","orb":0.45,"applying":false},{"a":"Jupiter","b":"Chiron","type":"sextile","orb":2.64,"applying":false},{"a":"Jupiter","b":"TrueLilith","type":"trine","orb":5.3,"applying":true},{"a":"Saturn","b":"MeanLilith","type":"sextile","orb":0.83,"applying":false},{"a":"Saturn","b":"TrueLilith","type":"sextile","orb":2.89,"applying":true},{"a":"Uranus","b":"Neptune","type":"conjunction","orb":5.55,"applying":false},{"a":"Uranus","b":"Chiron","type":"trine","orb":5.05,"applying":false},{"a":"Uranus","b":"MeanNode","type":"semisextile","orb":1.53,"applying":true},{"a":"Uranus","b":"MeanSouthNode","type":"quincunx","orb":1.53,"applying":true},{"a":"Uranus","b":"TrueNode","type":"semisextile","orb":0.25,"applying":false},{"a":"Uranus","b":"TrueSouthNode","type":"quincunx","orb":0.25,"applying":false},{"a":"Uranus","b":"MeanLilith","type":"semisquare","orb":1.7,"applying":false},{"a":"Neptune","b":"Pluto","type":"sextile","orb":1.68,"applying":false},{"a":"Neptune","b":"Chiron","type":"trine","orb":0.5,"applying":true},{"a":"Neptune","b":"Vertex","type":"semisquare","orb":0.91,"applying":true},{"a":"Neptune","b":"AntiVertex","type":"sesquiquadrate","orb":0.91,"applying":true},{"a":"Pluto","b":"Chiron","type":"opposition","orb":2.19,"applying":true},{"a":"Pluto","b":"MeanNode","type":"square","orb":5.7,"applying":false},{"a":"Pluto","b":"MeanSouthNode","type":"square","orb":5.7,"applying":false},{"a":"Pluto","b":"TrueLilith","type":"conjunction","orb":5.75,"applying":false},{"a":"Chiron","b":"MeanNode","type":"square","orb":3.51,"applying":false},{"a":"Chiron","b":"MeanSouthNode","type":"square","orb":3.51,"applying":false},{"a":"Chiron","b":"TrueNode","type":"square","orb":5.3,"applying":false},{"a":"Chiron","b":"TrueSouthNode","type":"square","orb":5.3,"applying":false},{"a":"Chiron","b":"TrueLilith","type":"opposition","orb":7.94,"applying":false},{"a":"MeanNode","b":"MeanSouthNode","type":"opposition","orb":0,"applying":false},{"a":"MeanNode","b":"TrueNode","type":"conjunction","orb":1.78,"applying":true},{"a":"MeanNode","b":"TrueSouthNode","type":"opposition","orb":1.78,"applying":true},{"a":"MeanNode","b":"PartOfFortune","type":"trine","orb":4.59,"applying":true},{"a":"MeanSouthNode","b":"TrueNode","type":"opposition","orb":1.78,"applying":true},{"a":"MeanSouthNode","b":"TrueSouthNode","type":"conjunction","orb":1.78,"applying":true},{"a":"MeanSouthNode","b":"PartOfFortune","type":"sextile","orb":4.59,"applying":true},{"a":"TrueNode","b":"TrueSouthNode","type":"opposition","orb":0,"applying":false},{"a":"TrueNode","b":"PartOfFortune","type":"trine","orb":2.81,"applying":true},{"a":"TrueSouthNode","b":"PartOfFortune","type":"sextile","orb":2.81,"applying":true},{"a":"MeanLilith","b":"TrueLilith","type":"conjunction","orb":3.72,"applying":true},{"a":"MeanLilith","b":"Vertex","type":"square","orb":2.94,"applying":true},{"a":"MeanLilith","b":"AntiVertex","type":"square","orb":2.94,"applying":true},{"a":"TrueLilith","b":"Vertex","type":"square","orb":6.66,"applying":true},{"a":"TrueLilith","b":"AntiVertex","type":"square","orb":6.66,"applying":true},{"a":"Vertex","b":"AntiVertex","type":"opposition","orb":0,"applying":false}],"housesBySystem":{"placidus":{"cusps":[165.6917,186.4906,214.1813,250.1173,289.0991,320.9835,345.6917,6.4906,34.1813,70.1173,109.0991,140.9835],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"wholeSign":{"cusps":[150,180,210,240,270,300,330,0,30,60,90,120],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"equal":{"cusps":[165.6917,195.6917,225.6917,255.6917,285.6917,315.6917,345.6917,15.6917,45.6917,75.6917,105.6917,135.6917],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"koch":{"cusps":[165.6917,193.7004,221.4863,250.1173,289.2153,317.9103,345.6917,13.7004,41.4863,70.1173,109.2153,137.9103],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"regiomontanus":{"cusps":[165.6917,185.9604,211.6322,250.1173,293.3777,323.9902,345.6917,5.9604,31.6322,70.1173,113.3777,143.9902],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"campanus":{"cusps":[165.6917,198.2422,225.2669,250.1173,277.1009,309.5936,345.6917,18.2422,45.2669,70.1173,97.1009,129.5936],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"porphyry":{"cusps":[165.6917,193.8336,221.9754,250.1173,281.9754,313.8336,345.6917,13.8336,41.9754,70.1173,101.9754,133.8336],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"alcabitius":{"cusps":[165.6917,183.1864,218.0738,250.1173,280.3584,311.5887,345.6917,3.1864,38.0738,70.1173,100.3584,131.5887],"ascendant":165.6917,"midheaven":70.1173,"reliable":true}},"pointHousesBySystem":{"placidus":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":8,"Jupiter":10,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"wholeSign":{"Sun":10,"Moon":7,"Mercury":10,"Venus":9,"Mars":8,"Jupiter":11,"Saturn":5,"Uranus":5,"Neptune":5,"Pluto":3,"Chiron":9,"MeanNode":6,"MeanSouthNode":12,"TrueNode":6,"TrueSouthNode":12,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":10},"equal":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":11,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":2,"Chiron":8,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"koch":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":10,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"regiomontanus":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":8,"Jupiter":10,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"campanus":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":11,"Saturn":5,"Uranus":5,"Neptune":5,"Pluto":3,"Chiron":8,"MeanNode":6,"MeanSouthNode":12,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"porphyry":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":11,"Saturn":5,"Uranus":4,"Neptune":5,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"alcabitius":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":8,"Jupiter":11,"Saturn":5,"Uranus":4,"Neptune":5,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9}}};
 
 const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
 // ︎ — селектор текстового (не эмодзи) начертания: без него некоторые
@@ -318,6 +387,184 @@ const ASPECT_COLOR = {
   trine: '#8fa9c0', sextile: '#8fa9c0',
   semisextile: '#5c596a', semisquare: '#5c596a', sesquiquadrate: '#5c596a', quincunx: '#5c596a',
 };
+
+// --- база городов для формы (координаты + IANA-таймзона) ---
+// Координаты — центр города, точность достаточна для расчёта карты
+// (несколько км расхождения дают меньше отличий в Asc, чем 1 минута
+// неточного времени рождения). Список не претендует на полноту — для
+// остальных городов есть ручной ввод координат и часового пояса ниже.
+const CITIES = [
+  { n: 'Москва', lat: 55.7558, lon: 37.6173, tz: 'Europe/Moscow' },
+  { n: 'Санкт-Петербург', lat: 59.9343, lon: 30.3351, tz: 'Europe/Moscow' },
+  { n: 'Новосибирск', lat: 55.0084, lon: 82.9357, tz: 'Asia/Novosibirsk' },
+  { n: 'Екатеринбург', lat: 56.8389, lon: 60.6057, tz: 'Asia/Yekaterinburg' },
+  { n: 'Казань', lat: 55.7887, lon: 49.1221, tz: 'Europe/Moscow' },
+  { n: 'Нижний Новгород', lat: 56.2965, lon: 43.9361, tz: 'Europe/Moscow' },
+  { n: 'Челябинск', lat: 55.1644, lon: 61.4368, tz: 'Asia/Yekaterinburg' },
+  { n: 'Самара', lat: 53.2001, lon: 50.1500, tz: 'Europe/Samara' },
+  { n: 'Омск', lat: 54.9885, lon: 73.3242, tz: 'Asia/Omsk' },
+  { n: 'Ростов-на-Дону', lat: 47.2357, lon: 39.7015, tz: 'Europe/Moscow' },
+  { n: 'Уфа', lat: 54.7388, lon: 55.9721, tz: 'Asia/Yekaterinburg' },
+  { n: 'Красноярск', lat: 56.0184, lon: 92.8672, tz: 'Asia/Krasnoyarsk' },
+  { n: 'Пермь', lat: 58.0105, lon: 56.2502, tz: 'Asia/Yekaterinburg' },
+  { n: 'Воронеж', lat: 51.6720, lon: 39.1843, tz: 'Europe/Moscow' },
+  { n: 'Волгоград', lat: 48.7080, lon: 44.5133, tz: 'Europe/Volgograd' },
+  { n: 'Краснодар', lat: 45.0355, lon: 38.9753, tz: 'Europe/Moscow' },
+  { n: 'Саратов', lat: 51.5924, lon: 46.0348, tz: 'Europe/Saratov' },
+  { n: 'Тюмень', lat: 57.1522, lon: 65.5272, tz: 'Asia/Yekaterinburg' },
+  { n: 'Ижевск', lat: 56.8527, lon: 53.2118, tz: 'Europe/Samara' },
+  { n: 'Барнаул', lat: 53.3480, lon: 83.7798, tz: 'Asia/Barnaul' },
+  { n: 'Иркутск', lat: 52.2870, lon: 104.3050, tz: 'Asia/Irkutsk' },
+  { n: 'Владивосток', lat: 43.1155, lon: 131.8855, tz: 'Asia/Vladivostok' },
+  { n: 'Хабаровск', lat: 48.4827, lon: 135.0838, tz: 'Asia/Vladivostok' },
+  { n: 'Калининград', lat: 54.7104, lon: 20.4522, tz: 'Europe/Kaliningrad' },
+  { n: 'Сочи', lat: 43.6028, lon: 39.7342, tz: 'Europe/Moscow' },
+  { n: 'Томск', lat: 56.4977, lon: 84.9744, tz: 'Asia/Tomsk' },
+  { n: 'Ярославль', lat: 57.6261, lon: 39.8845, tz: 'Europe/Moscow' },
+  { n: 'Севастополь', lat: 44.6054, lon: 33.5220, tz: 'Europe/Simferopol' },
+  { n: 'Киев', lat: 50.4501, lon: 30.5234, tz: 'Europe/Kyiv' },
+  { n: 'Харьков', lat: 49.9935, lon: 36.2304, tz: 'Europe/Kyiv' },
+  { n: 'Одесса', lat: 46.4825, lon: 30.7233, tz: 'Europe/Kyiv' },
+  { n: 'Минск', lat: 53.9006, lon: 27.5590, tz: 'Europe/Minsk' },
+  { n: 'Алматы', lat: 43.2220, lon: 76.8512, tz: 'Asia/Almaty' },
+  { n: 'Астана', lat: 51.1605, lon: 71.4704, tz: 'Asia/Almaty' },
+  { n: 'Ташкент', lat: 41.2995, lon: 69.2401, tz: 'Asia/Tashkent' },
+  { n: 'Баку', lat: 40.4093, lon: 49.8671, tz: 'Asia/Baku' },
+  { n: 'Ереван', lat: 40.1792, lon: 44.4991, tz: 'Asia/Yerevan' },
+  { n: 'Тбилиси', lat: 41.7151, lon: 44.8271, tz: 'Asia/Tbilisi' },
+  { n: 'Бишкек', lat: 42.8746, lon: 74.5698, tz: 'Asia/Bishkek' },
+  { n: 'Душанбе', lat: 38.5598, lon: 68.7870, tz: 'Asia/Dushanbe' },
+  { n: 'Ашхабад', lat: 37.9601, lon: 58.3261, tz: 'Asia/Ashgabat' },
+  { n: 'Кишинёв', lat: 47.0105, lon: 28.8638, tz: 'Europe/Chisinau' },
+  { n: 'Лондон', lat: 51.5074, lon: -0.1278, tz: 'Europe/London' },
+  { n: 'Париж', lat: 48.8566, lon: 2.3522, tz: 'Europe/Paris' },
+  { n: 'Берлин', lat: 52.5200, lon: 13.4050, tz: 'Europe/Berlin' },
+  { n: 'Рим', lat: 41.9028, lon: 12.4964, tz: 'Europe/Rome' },
+  { n: 'Мадрид', lat: 40.4168, lon: -3.7038, tz: 'Europe/Madrid' },
+  { n: 'Барселона', lat: 41.3874, lon: 2.1686, tz: 'Europe/Madrid' },
+  { n: 'Амстердам', lat: 52.3676, lon: 4.9041, tz: 'Europe/Amsterdam' },
+  { n: 'Вена', lat: 48.2082, lon: 16.3738, tz: 'Europe/Vienna' },
+  { n: 'Прага', lat: 50.0755, lon: 14.4378, tz: 'Europe/Prague' },
+  { n: 'Варшава', lat: 52.2297, lon: 21.0122, tz: 'Europe/Warsaw' },
+  { n: 'Стокгольм', lat: 59.3293, lon: 18.0686, tz: 'Europe/Stockholm' },
+  { n: 'Хельсинки', lat: 60.1699, lon: 24.9384, tz: 'Europe/Helsinki' },
+  { n: 'Осло', lat: 59.9139, lon: 10.7522, tz: 'Europe/Oslo' },
+  { n: 'Копенгаген', lat: 55.6761, lon: 12.5683, tz: 'Europe/Copenhagen' },
+  { n: 'Афины', lat: 37.9838, lon: 23.7275, tz: 'Europe/Athens' },
+  { n: 'Стамбул', lat: 41.0082, lon: 28.9784, tz: 'Europe/Istanbul' },
+  { n: 'Лиссабон', lat: 38.7223, lon: -9.1393, tz: 'Europe/Lisbon' },
+  { n: 'Дублин', lat: 53.3498, lon: -6.2603, tz: 'Europe/Dublin' },
+  { n: 'Цюрих', lat: 47.3769, lon: 8.5417, tz: 'Europe/Zurich' },
+  { n: 'Будапешт', lat: 47.4979, lon: 19.0402, tz: 'Europe/Budapest' },
+  { n: 'Белград', lat: 44.7866, lon: 20.4489, tz: 'Europe/Belgrade' },
+  { n: 'Нью-Йорк', lat: 40.7128, lon: -74.0060, tz: 'America/New_York' },
+  { n: 'Лос-Анджелес', lat: 34.0522, lon: -118.2437, tz: 'America/Los_Angeles' },
+  { n: 'Чикаго', lat: 41.8781, lon: -87.6298, tz: 'America/Chicago' },
+  { n: 'Сан-Франциско', lat: 37.7749, lon: -122.4194, tz: 'America/Los_Angeles' },
+  { n: 'Майами', lat: 25.7617, lon: -80.1918, tz: 'America/New_York' },
+  { n: 'Торонто', lat: 43.6532, lon: -79.3832, tz: 'America/Toronto' },
+  { n: 'Мехико', lat: 19.4326, lon: -99.1332, tz: 'America/Mexico_City' },
+  { n: 'Сан-Паулу', lat: -23.5505, lon: -46.6333, tz: 'America/Sao_Paulo' },
+  { n: 'Рио-де-Жанейро', lat: -22.9068, lon: -43.1729, tz: 'America/Sao_Paulo' },
+  { n: 'Буэнос-Айрес', lat: -34.6037, lon: -58.3816, tz: 'America/Argentina/Buenos_Aires' },
+  { n: 'Дубай', lat: 25.2048, lon: 55.2708, tz: 'Asia/Dubai' },
+  { n: 'Тель-Авив', lat: 32.0853, lon: 34.7818, tz: 'Asia/Jerusalem' },
+  { n: 'Пекин', lat: 39.9042, lon: 116.4074, tz: 'Asia/Shanghai' },
+  { n: 'Шанхай', lat: 31.2304, lon: 121.4737, tz: 'Asia/Shanghai' },
+  { n: 'Токио', lat: 35.6762, lon: 139.6503, tz: 'Asia/Tokyo' },
+  { n: 'Сеул', lat: 37.5665, lon: 126.9780, tz: 'Asia/Seoul' },
+  { n: 'Дели', lat: 28.7041, lon: 77.1025, tz: 'Asia/Kolkata' },
+  { n: 'Мумбаи', lat: 19.0760, lon: 72.8777, tz: 'Asia/Kolkata' },
+  { n: 'Бангкок', lat: 13.7563, lon: 100.5018, tz: 'Asia/Bangkok' },
+  { n: 'Сингапур', lat: 1.3521, lon: 103.8198, tz: 'Asia/Singapore' },
+  { n: 'Гонконг', lat: 22.3193, lon: 114.1694, tz: 'Asia/Hong_Kong' },
+  { n: 'Сидней', lat: -33.8688, lon: 151.2093, tz: 'Australia/Sydney' },
+  { n: 'Мельбурн', lat: -37.8136, lon: 144.9631, tz: 'Australia/Melbourne' },
+  { n: 'Каир', lat: 30.0444, lon: 31.2357, tz: 'Africa/Cairo' },
+  { n: 'Кейптаун', lat: -33.9249, lon: 18.4241, tz: 'Africa/Johannesburg' },
+];
+
+// --- определение смещения от UTC по IANA-таймзоне через Intl (без сети и
+// без отдельной базы tzdata — используем ту, что уже встроена в браузер) ---
+function tzOffsetMinutesAt(utcMillis, timeZone) {
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone, hour12: false, year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  });
+  const parts = dtf.formatToParts(new Date(utcMillis)).reduce((acc, p) => {
+    if (p.type !== 'literal') acc[p.type] = p.value;
+    return acc;
+  }, {});
+  const hour = parts.hour === '24' ? 0 : Number(parts.hour);
+  const asUTC = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), hour, Number(parts.minute), Number(parts.second));
+  return (asUTC - utcMillis) / 60000; // локальное время минус UTC, в минутах
+}
+
+// Локальное время рождения (год..секунда) + таймзона -> точный момент UTC.
+// Двухшаговое приближение — стандартный приём для корректного разрешения
+// смещения по обе стороны перехода на летнее/зимнее время.
+function resolveUtcFromLocal(year, month, day, hour, minute, timeZone) {
+  let guessUTC = Date.UTC(year, month - 1, day, hour, minute, 0);
+  for (let i = 0; i < 2; i++) {
+    const offsetMin = tzOffsetMinutesAt(guessUTC, timeZone);
+    guessUTC = Date.UTC(year, month - 1, day, hour, minute, 0) - offsetMin * 60000;
+  }
+  return new Date(guessUTC);
+}
+
+// Строит DATA (в том же формате, что и статический пример) из реального
+// расчёта движка по данным, введённым пользователем — зеркалит логику
+// src/__tests__/exportDemo.ts, но выполняется прямо в браузере.
+function buildChartData(moment, location, label) {
+  const systems = Object.keys(HOUSE_SYSTEM_LABEL);
+  const base = AstraEngine.calculateNatalChart(moment, location, { houseSystem: 'placidus' });
+
+  const points = base.points.map((p) => ({
+    name: p.name,
+    longitude: Number(p.longitude.toFixed(4)),
+    sign: p.sign,
+    degreeInSign: Number(p.degreeInSign.toFixed(2)),
+    isRetrograde: p.isRetrograde,
+  }));
+
+  const dignities = {};
+  for (const [name, d] of Object.entries(base.dignities)) {
+    if (d.rulership) dignities[name] = 'rulership';
+    else if (d.exaltation) dignities[name] = 'exaltation';
+    else if (d.detriment) dignities[name] = 'detriment';
+    else if (d.fall) dignities[name] = 'fall';
+  }
+
+  const aspects = base.aspects.map((a) => ({
+    a: a.pointA, b: a.pointB, type: a.type, orb: Number(a.orb.toFixed(2)), applying: a.applying,
+  }));
+
+  const housesBySystem = {};
+  const pointHousesBySystem = {};
+  for (const sys of systems) {
+    const chart = sys === 'placidus' ? base : AstraEngine.calculateNatalChart(moment, location, { houseSystem: sys });
+    housesBySystem[sys] = {
+      cusps: chart.houses.cusps.map((c) => Number(c.toFixed(4))),
+      ascendant: Number(chart.houses.ascendant.toFixed(4)),
+      midheaven: Number(chart.houses.midheaven.toFixed(4)),
+      reliable: chart.houses.reliable,
+    };
+    const map = {};
+    for (const p of chart.points) { if (p.house !== undefined) map[p.name] = p.house; }
+    pointHousesBySystem[sys] = map;
+  }
+
+  return {
+    meta: {
+      label,
+      engineVersion: base.meta.engineVersion,
+      houseSystemDefault: 'placidus',
+      timeKnown: base.meta.timeKnown,
+      warnings: base.meta.warnings,
+    },
+    points, dignities, aspects, housesBySystem, pointHousesBySystem,
+  };
+}
 
 // Показываем в колесе только точки, для которых есть смысл рисовать (без AntiVertex — почти совпадает с Vertex)
 const HIDDEN_FROM_WHEEL = new Set(['AntiVertex']);
@@ -386,6 +633,7 @@ function render() {
   const houses = DATA.housesBySystem[currentSystem];
   const pointHouses = DATA.pointHousesBySystem[currentSystem];
 
+  document.getElementById('chart-label').textContent = DATA.meta.label || '—';
   document.getElementById('chart-caption').textContent =
     `Placidus и другие 7 систем доступны движку — сейчас показана: ${HOUSE_SYSTEM_LABEL[currentSystem]}${houses.reliable ? '' : ' (запасной расчёт, не полностью надёжна на этих координатах)'}`;
 
@@ -530,6 +778,115 @@ houseSelect.addEventListener('change', (e) => { currentSystem = e.target.value; 
 
 document.getElementById('toggle-aspects').addEventListener('change', (e) => { showAspects = e.target.checked; render(); });
 document.getElementById('toggle-houses').addEventListener('change', (e) => { showHouses = e.target.checked; render(); });
+
+// --- форма "Твои данные" (расчёт настоящей карты в браузере) ---
+const cityListEl = document.getElementById('city-list');
+CITIES.forEach((c) => {
+  const opt = document.createElement('option');
+  opt.value = c.n;
+  cityListEl.appendChild(opt);
+});
+
+const manualTzEl = document.getElementById('manual-tz');
+let TZ_NAMES = [];
+try {
+  TZ_NAMES = typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : [];
+} catch (e) { TZ_NAMES = []; }
+if (TZ_NAMES.length === 0) {
+  // запасной короткий список, если браузер не поддерживает Intl.supportedValuesOf
+  TZ_NAMES = ['Europe/Moscow','Europe/Kyiv','Europe/London','Europe/Paris','Europe/Berlin','America/New_York','America/Los_Angeles','Asia/Almaty','Asia/Dubai','Asia/Shanghai','Asia/Tokyo','Australia/Sydney','UTC'];
+}
+TZ_NAMES.forEach((tz) => {
+  const opt = document.createElement('option');
+  opt.value = tz;
+  opt.textContent = tz;
+  if (tz === 'Europe/Moscow') opt.selected = true;
+  manualTzEl.appendChild(opt);
+});
+
+const timeUnknownEl = document.getElementById('time-unknown');
+const birthTimeEl = document.getElementById('birth-time');
+timeUnknownEl.addEventListener('change', () => { birthTimeEl.disabled = timeUnknownEl.checked; });
+
+const manualToggleEl = document.getElementById('manual-toggle');
+const manualFieldsEl = document.getElementById('manual-fields');
+const birthCityEl = document.getElementById('birth-city');
+manualToggleEl.addEventListener('change', () => {
+  manualFieldsEl.style.display = manualToggleEl.checked ? 'block' : 'none';
+  birthCityEl.disabled = manualToggleEl.checked;
+});
+
+function findCity(name) {
+  const q = name.trim().toLowerCase();
+  return CITIES.find((c) => c.n.toLowerCase() === q);
+}
+
+function setCalcStatus(text, kind) {
+  const el = document.getElementById('calc-status');
+  el.textContent = text;
+  el.className = 'calc-status' + (kind ? ' ' + kind : '');
+}
+
+document.getElementById('calc-btn').addEventListener('click', () => {
+  try {
+    const dateStr = document.getElementById('birth-date').value;
+    if (!dateStr) { setCalcStatus('Укажи дату рождения.', 'error'); return; }
+    const [y, mo, d] = dateStr.split('-').map(Number);
+
+    const timeKnown = !timeUnknownEl.checked;
+    let hour = 12, minute = 0;
+    if (timeKnown) {
+      const timeStr = birthTimeEl.value;
+      if (!timeStr) { setCalcStatus('Укажи время рождения — или отметь «время неизвестно».', 'error'); return; }
+      [hour, minute] = timeStr.split(':').map(Number);
+    }
+
+    let location, tz;
+    if (manualToggleEl.checked) {
+      const lat = parseFloat(document.getElementById('manual-lat').value);
+      const lon = parseFloat(document.getElementById('manual-lon').value);
+      if (Number.isNaN(lat) || Number.isNaN(lon)) { setCalcStatus('Укажи широту и долготу числом (например, 55.7558).', 'error'); return; }
+      if (lat < -90 || lat > 90 || lon < -180 || lon > 180) { setCalcStatus('Широта должна быть от −90 до 90, долгота — от −180 до 180.', 'error'); return; }
+      tz = manualTzEl.value;
+      location = { latitude: lat, longitude: lon, label: `${lat.toFixed(4)}, ${lon.toFixed(4)}` };
+    } else {
+      const city = findCity(birthCityEl.value);
+      if (!city) { setCalcStatus('Такого города нет в списке — выбери из подсказки или включи ручной ввод координат.', 'error'); return; }
+      tz = city.tz;
+      location = { latitude: city.lat, longitude: city.lon, label: city.n };
+    }
+
+    const utcDate = timeKnown
+      ? resolveUtcFromLocal(y, mo, d, hour, minute, tz)
+      : new Date(Date.UTC(y, mo - 1, d, 12, 0, 0)); // время неизвестно: точный UTC-момент не важен для solar chart
+    const moment = { utc: utcDate, timeKnown };
+
+    const dateLabel = `${String(d).padStart(2,'0')}.${String(mo).padStart(2,'0')}.${y}`;
+    const label = timeKnown
+      ? `Твоя натальная карта — ${dateLabel}, ${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}, ${location.label}`
+      : `Твоя натальная карта (время неизвестно) — ${dateLabel}, ${location.label}`;
+
+    DATA = buildChartData(moment, location, label);
+    currentSystem = DATA.meta.houseSystemDefault;
+    selectedPoint = null;
+
+    const warnEl = document.getElementById('warn-note');
+    warnEl.textContent = 'Это настоящий расчёт по введённым данным (не пример) — движок отдаёт только числа и их источник; текстовые толкования — задача отдельного AI-слоя поверх этого API (см. README, §«Архитектура»).';
+    const engineWarnEl = document.getElementById('engine-warnings');
+    if (DATA.meta.warnings && DATA.meta.warnings.length) {
+      engineWarnEl.textContent = DATA.meta.warnings.join(' ');
+      engineWarnEl.style.display = 'block';
+    } else {
+      engineWarnEl.style.display = 'none';
+    }
+
+    render();
+    setCalcStatus('Карта построена.', 'ok');
+  } catch (err) {
+    console.error(err);
+    setCalcStatus('Не удалось посчитать карту: ' + (err && err.message ? err.message : String(err)), 'error');
+  }
+});
 
 // --- zoom / pan (управление viewBox) ---
 let viewBox = { x: 0, y: 0, w: 640, h: 640 };
