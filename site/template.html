@@ -32,6 +32,8 @@
     --wheel-text: #ece7db;
     --wheel-text-dim: #9a95a8;
     --wheel-accent: #cdaa6e;
+    --wheel-line: #4d4960;
+    --wheel-line-strong: #6f6a86;
     font-family: 'PT Serif', 'Georgia', 'Times New Roman', serif;
   }
   /* Light Mode — та же "Luxury Cosmic Minimalism" палитра, инвертированная в
@@ -165,15 +167,33 @@
   .planet-dot:hover circle { stroke: var(--wheel-accent); stroke-width: 2; }
   .planet-label { font-size: 13px; fill: var(--wheel-text); font-family: 'Segoe UI Symbol', 'Noto Sans Symbols', sans-serif; pointer-events: none; }
   .planet-label.selected { fill: var(--wheel-accent); font-weight: bold; }
-  .sign-label { font-size: 15px; fill: var(--wheel-text-dim); text-anchor: middle; dominant-baseline: middle; font-family: 'Segoe UI Symbol', 'Noto Sans Symbols', sans-serif; }
-  .cusp-line { stroke: var(--line); stroke-width: 1; }
-  .cusp-line.angle { stroke: var(--accent-dim); stroke-width: 1.4; }
-  .house-num { font-size: 10px; fill: var(--wheel-text-dim); font-family: -apple-system, sans-serif; text-anchor: middle; }
-  .zodiac-wedge { stroke: var(--border); stroke-width: 0.5; }
+  /* заливка глифа знака теперь задаётся поточечно (цвет стихии — см.
+     render()), поэтому здесь только геометрия шрифта, без fill */
+  .sign-label { font-size: 16px; text-anchor: middle; dominant-baseline: middle; font-family: 'Segoe UI Symbol', 'Noto Sans Symbols', sans-serif; font-weight: 600; }
+  .cusp-line { stroke: var(--wheel-line); stroke-width: 1; }
+  .cusp-line.angle { stroke: var(--wheel-accent); stroke-width: 1.8; }
+  .house-num { font-size: 10px; fill: var(--wheel-text); font-family: -apple-system, sans-serif; text-anchor: middle; dominant-baseline: middle; font-weight: 600; }
+  .house-num-bg { fill: #131219; fill-opacity: 0.78; stroke: var(--wheel-line); stroke-width: 0.5; }
+  .zodiac-wedge { stroke: var(--wheel-line); stroke-width: 0.8; }
+  .house-wedge { stroke: none; }
+  .angle-label {
+    font-size: 11px; font-weight: 700; fill: var(--wheel-accent);
+    text-anchor: middle; dominant-baseline: middle;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    stroke: #131219; stroke-width: 3px; paint-order: stroke fill;
+  }
   /* прозрачность и толщина линии аспекта теперь считаются в JS по точности
      орба (см. render()) и передаются через inline style — здесь только
      общий сброс заливки */
   .aspect-line { fill: none; }
+  .chart-legend {
+    display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; margin-top: 0.85rem;
+    padding-top: 0.75rem; border-top: 1px dashed var(--border);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 0.74rem; color: var(--text-dim);
+  }
+  .chart-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+  .chart-legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 
   aside {
     display: flex;
@@ -399,6 +419,13 @@
     </div>
     <div id="chart-wrap">
       <svg id="chart-svg" viewBox="0 0 640 640" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div class="chart-legend">
+      <span><i style="background:var(--fire)"></i> Огонь — Овен, Лев, Стрелец</span>
+      <span><i style="background:var(--earth)"></i> Земля — Телец, Дева, Козерог</span>
+      <span><i style="background:var(--air)"></i> Воздух — Близнецы, Весы, Водолей</span>
+      <span><i style="background:var(--water)"></i> Вода — Рак, Скорпион, Рыбы</span>
+      <span><i style="background:var(--wheel-accent)"></i> Угловые дома (1/4/7/10) — самые «сильные»</span>
     </div>
   </div>
 
@@ -9838,7 +9865,10 @@ function render() {
   // Фон
   svg.appendChild(svgEl('circle', { cx, cy, r: R_ZODIAC_OUT + 4, fill: '#131219' }));
 
-  // Зодиакальные клинья (12 знаков по 30°, от 0° Овна)
+  // Зодиакальные клинья (12 знаков по 30°, от 0° Овна). Заливка и глиф
+  // окрашены в цвет стихии знака (Огонь/Земля/Воздух/Вода — см. легенду под
+  // колесом) — не только фон, но и сам символ знака, чтобы связь цвет↔стихия
+  // считывалась с первого взгляда, а не только по еле заметной подложке.
   for (let i = 0; i < 12; i++) {
     const signName = SIGNS[i];
     const lonStart = i * 30, lonEnd = i * 30 + 30;
@@ -9848,30 +9878,65 @@ function render() {
     const pOutEnd = polar(R_ZODIAC_OUT, aEnd);
     const pInStart = polar(R_ZODIAC_IN, aStart);
     const pInEnd = polar(R_ZODIAC_IN, aEnd);
+    const elementColor = ELEMENT_COLOR[SIGN_ELEMENT[signName]];
     // клин рисуется "назад" по углу т.к. экранный угол убывает при росте долготы в эту сторону — используем sweep=0
     const path = `M ${pOutStart.x} ${pOutStart.y} A ${R_ZODIAC_OUT} ${R_ZODIAC_OUT} 0 0 0 ${pOutEnd.x} ${pOutEnd.y} L ${pInEnd.x} ${pInEnd.y} A ${R_ZODIAC_IN} ${R_ZODIAC_IN} 0 0 1 ${pInStart.x} ${pInStart.y} Z`;
-    const el = svgEl('path', { d: path, class: 'zodiac-wedge', fill: ELEMENT_COLOR[SIGN_ELEMENT[signName]], 'fill-opacity': '0.16' });
+    const el = svgEl('path', { d: path, class: 'zodiac-wedge', fill: elementColor, 'fill-opacity': '0.26' });
     svg.appendChild(el);
     const mid = polar((R_ZODIAC_OUT + R_ZODIAC_IN) / 2, lonToScreenAngle(lonStart + 15, ascLon));
-    const label = svgEl('text', { x: mid.x, y: mid.y, class: 'sign-label' });
+    const label = svgEl('text', { x: mid.x, y: mid.y, class: 'sign-label', fill: elementColor });
     label.textContent = SIGN_GLYPH[signName];
     svg.appendChild(label);
   }
-  svg.appendChild(svgEl('circle', { cx, cy, r: R_ZODIAC_IN, fill: 'none', stroke: 'var(--border)', 'stroke-width': 1 }));
+  svg.appendChild(svgEl('circle', { cx, cy, r: R_ZODIAC_IN, fill: 'none', stroke: 'var(--wheel-line-strong)', 'stroke-width': 1.6 }));
 
-  // Куспиды домов
+  // Куспиды и дома. Каждый дом получает лёгкую заливку по своей роли —
+  // угловые (1/4/7/10, самые "сильные" дома) заметнее всего, последующие
+  // тише, падающие — почти незаметны: та же логика значимости, что и у
+  // толщины аспектных линий по орбу, применённая к домам. Угловые куспиды
+  // (ASC/DSC/MC/IC) дополнительно подписаны и "пробивают" зодиакальное
+  // кольцо насквозь до внешнего края — это самые важные точки карты.
   if (showHouses) {
+    houses.cusps.forEach((cuspLon, i) => {
+      const nextLon = houses.cusps[(i + 1) % 12];
+      let span = nextLon - cuspLon; if (span <= 0) span += 360;
+      const largeArc = span > 180 ? 1 : 0;
+      const aStart = lonToScreenAngle(cuspLon, ascLon);
+      const aEnd = lonToScreenAngle(nextLon, ascLon);
+      const hOutStart = polar(R_CUSP_OUT, aStart);
+      const hOutEnd = polar(R_CUSP_OUT, aEnd);
+      const hInStart = polar(R_CUSP_IN, aStart);
+      const hInEnd = polar(R_CUSP_IN, aEnd);
+      const houseNum = i + 1;
+      const tier = [1, 4, 7, 10].includes(houseNum) ? 0.11 : [2, 5, 8, 11].includes(houseNum) ? 0.045 : 0.02;
+      const housePath = `M ${hOutStart.x} ${hOutStart.y} A ${R_CUSP_OUT} ${R_CUSP_OUT} 0 ${largeArc} 0 ${hOutEnd.x} ${hOutEnd.y} L ${hInEnd.x} ${hInEnd.y} A ${R_CUSP_IN} ${R_CUSP_IN} 0 ${largeArc} 1 ${hInStart.x} ${hInStart.y} Z`;
+      svg.appendChild(svgEl('path', { d: housePath, class: 'house-wedge', fill: 'var(--wheel-accent)', 'fill-opacity': String(tier) }));
+    });
+
     houses.cusps.forEach((cuspLon, i) => {
       const isAngle = i === 0 || i === 3 || i === 6 || i === 9; // Asc/IC/Desc/MC
       const a = lonToScreenAngle(cuspLon, ascLon);
-      const outer = polar(R_CUSP_OUT, a);
+      // угловые куспиды пробивают зодиакальное кольцо насквозь, до внешнего
+      // края — визуально связывает линию с её подписью ASC/DSC/MC/IC ниже
+      const outer = polar(isAngle ? R_ZODIAC_OUT : R_CUSP_OUT, a);
       const inner = polar(R_CUSP_IN, a);
       svg.appendChild(svgEl('line', { x1: inner.x, y1: inner.y, x2: outer.x, y2: outer.y, class: isAngle ? 'cusp-line angle' : 'cusp-line' }));
+
+      if (isAngle) {
+        const labelText = i === 0 ? 'ASC' : i === 3 ? 'IC' : i === 6 ? 'DSC' : 'MC';
+        const labelPos = polar(R_ZODIAC_OUT + 14, a);
+        const angleLabel = svgEl('text', { x: labelPos.x, y: labelPos.y, class: 'angle-label' });
+        angleLabel.textContent = labelText;
+        svg.appendChild(angleLabel);
+      }
 
       const nextLon = houses.cusps[(i + 1) % 12];
       let span = nextLon - cuspLon; if (span <= 0) span += 360;
       const numAngle = lonToScreenAngle(cuspLon + span / 2, ascLon);
       const numPos = polar(R_HOUSE_NUM, numAngle);
+      // тёмная подложка под номером дома — иначе мелкая цифра теряется в
+      // паутине пересекающихся аспектных линий, особенно в центре колеса
+      svg.appendChild(svgEl('circle', { cx: numPos.x, cy: numPos.y, r: 9, class: 'house-num-bg' }));
       const numLabel = svgEl('text', { x: numPos.x, y: numPos.y, class: 'house-num' });
       numLabel.textContent = String(i + 1);
       svg.appendChild(numLabel);
