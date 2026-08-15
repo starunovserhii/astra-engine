@@ -273,6 +273,28 @@
     .interp-section { padding: 0 1rem; }
     .interp-panel { padding: 1.2rem 1.3rem; }
   }
+
+  /* --- «Текущие транзиты» --- */
+  .transit-toolbar-date { margin: 0; min-width: 10.5rem; }
+  .transit-toolbar-date label { margin-bottom: 0.28rem; }
+  .transit-positions {
+    display: flex; flex-wrap: wrap; gap: 0.55rem 1.5rem; margin-bottom: 1.2rem;
+    padding-bottom: 1.1rem; border-bottom: 1px solid var(--border);
+  }
+  .transit-pos-item { display: flex; flex-direction: column; gap: 0.1rem; min-width: 9.5rem; }
+  .transit-pos-name { color: var(--text); font-weight: 600; font-size: 0.88rem; }
+  .transit-pos-detail { color: var(--text-dim); font-size: 0.76rem; }
+  .transit-list { display: flex; flex-direction: column; }
+  .transit-item { border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem; }
+  .transit-item:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+  .transit-item-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.35rem; }
+  .transit-item-head b { font-family: Georgia, serif; font-size: 1rem; color: var(--text); font-weight: 600; }
+  .transit-orb { font-size: 0.74rem; color: var(--accent); white-space: nowrap; }
+  .transit-item p { font-size: 0.9rem; line-height: 1.65; margin: 0; max-width: 74ch; }
+  .transit-empty { color: var(--text-dim); font-size: 0.88rem; }
+  .transit-time-note { font-size: 0.74rem; color: var(--text-dim); font-style: italic; margin: 0 0 1.2rem; }
+  #transit-body { display: none; }
+  #transit-body.active { display: block; }
 </style>
 </head>
 <body>
@@ -387,6 +409,23 @@
 
 <section class="interp-section">
   <div class="interp-panel">
+    <h2>Текущие транзиты</h2>
+    <p class="interp-intro">Где сейчас (или на выбранную дату) находятся планеты относительно точек твоей натальной карты выше — то, что в астрологии называют транзитами. Тот же движок и та же логика поиска аспектов, что и в самой карте: просто вторая точка отсчёта — не момент рождения, а выбранный момент времени.</p>
+    <div class="interp-toolbar">
+      <div class="form-row transit-toolbar-date">
+        <label for="transit-date">Дата</label>
+        <input type="date" id="transit-date">
+      </div>
+      <button id="transit-generate-btn" class="interp-btn" type="button">Показать транзиты</button>
+      <span id="transit-status" class="interp-status"></span>
+    </div>
+    <div id="transit-body"></div>
+    <p class="interp-disclaimer">Транзиты — динамическая, а не постоянная картина: у быстрых планет (Луна, Меркурий, Венера, Марс) аспект длится часы—дни, у медленных (Юпитер—Плутон) — недели—годы, это указано у каждого пункта. Как и «Глубокая расшифровка» ниже, это инструмент для размышления о текущем моменте, а не предсказание конкретных событий.</p>
+  </div>
+</section>
+
+<section class="interp-section">
+  <div class="interp-panel">
     <h2>Глубокая расшифровка</h2>
     <p class="interp-intro">Текстовый интерпретационный слой поверх точных данных карты выше: правило-ориентированный движок (без AI и без сервера — работает прямо в этой странице), который собирает связный разбор из положения планет по знакам и домам, достоинств и аспектов. У каждого раздела указано основание — конкретные элементы карты, на которых он построен.</p>
     <div class="interp-toolbar">
@@ -407,6 +446,15 @@
 <script src="astra-engine.bundle.js"></script>
 <script>
 let DATA = /*__ASTRA_DEMO_DATA__*/;
+
+// Момент и место рождения ТЕКУЩЕЙ карты — хранятся отдельно от DATA (которая
+// содержит только уже готовые для отрисовки факты), потому что транзитам
+// (см. ниже, «Текущие транзиты») нужен полный NatalChartResult движка, а не
+// урезанный DATA — calculateTransits() пересчитывает натальную карту заново.
+// По умолчанию — те же данные, что зашиты в демо-DATA (см.
+// src/__tests__/exportDemo.ts): 15.06.1990, 08:30 UTC, Москва.
+let currentBirthMoment = { utc: new Date(Date.UTC(1990, 5, 15, 8, 30, 0)), timeKnown: true };
+let currentBirthLocation = { latitude: 55.751244, longitude: 37.618423, label: 'Москва' };
 
 const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
 // ︎ — селектор текстового (не эмодзи) начертания: без него некоторые
@@ -9853,6 +9901,8 @@ document.getElementById('calc-btn').addEventListener('click', () => {
     DATA = buildChartData(moment, location, label);
     currentSystem = DATA.meta.houseSystemDefault;
     selectedPoint = null;
+    currentBirthMoment = moment;
+    currentBirthLocation = location;
 
     const warnEl = document.getElementById('warn-note');
     warnEl.textContent = 'Это настоящий расчёт по введённым данным (не пример) — движок отдаёт только числа и их источник; текстовый разбор — в разделе «Глубокая расшифровка» ниже.';
@@ -9867,6 +9917,7 @@ document.getElementById('calc-btn').addEventListener('click', () => {
     render();
     setCalcStatus('Карта построена.', 'ok');
     resetInterpretation(); // новая карта — старая расшифровка больше не актуальна
+    resetTransits(); // и транзиты относительно старой карты тоже устарели
   } catch (err) {
     console.error(err);
     setCalcStatus('Не удалось посчитать карту: ' + (err && err.message ? err.message : String(err)), 'error');
@@ -9965,6 +10016,7 @@ interpGenerateBtn.addEventListener('click', renderInterpretation);
 // самой карты — см. resetInterpretation() сразу после setCalcStatus('Карта
 // построена') в обработчике calc-btn выше.
 houseSelect.addEventListener('change', resetInterpretation);
+houseSelect.addEventListener('change', resetTransits); // дом транзитной планеты тоже зависит от системы домов
 
 // --- растеризация SVG-колеса в PNG (для встраивания картинки в PDF) ---
 // Инлайним вычисленные стили в клон, т.к. классы из внешнего <style> не
@@ -10143,6 +10195,156 @@ async function generatePdf() {
 }
 
 interpPdfBtn.addEventListener('click', generatePdf);
+
+// ============================================================================
+// UI «Текущие транзиты»: положения планет на выбранную (по умолчанию —
+// сегодняшнюю) дату относительно натальной карты выше. Использует ровно ту
+// же функцию движка, что и сама карта (AstraEngine.calculateTransits, см.
+// src/charts/transits.ts) — единственная разница со всем остальным сайтом в
+// том, что вторая точка отсчёта не момент рождения, а выбранный момент
+// времени. Текстовая часть переиспользует ASPECT_FRAME из «Глубокой
+// расшифровки» выше (та же формулировка "X и Y образуют..." одинаково
+// применима что к двум натальным планетам, что к транзитной и натальной).
+// ============================================================================
+const transitDateEl = document.getElementById('transit-date');
+const transitGenerateBtn = document.getElementById('transit-generate-btn');
+const transitStatusEl = document.getElementById('transit-status');
+const transitBodyEl = document.getElementById('transit-body');
+
+// Планеты, для которых показываем транзитные положения/аспекты. Транзитные
+// Узлы/Лилит/Vertex сюда сознательно не включены (при этом натальная сторона
+// аспекта не ограничена — транзитный Юпитер к твоему натальному Узлу в
+// списке появится): движение Узлов/Лилит настолько медленное и тонкое, что
+// их транзиты почти не обсуждаются даже в профессиональной практике — это
+// честное ограничение объёма, а не ошибка.
+const TRANSIT_TRACKED_PLANETS = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', 'Chiron'];
+// Натальная сторона аспекта: пропускаем "истинные" дубли средних Узла/Лилит
+// и Антивертекс (он почти совпадает с Вертексом) — иначе один и тот же
+// транзит считается дважды почти одинаковыми парами и раздувает список.
+const TRANSIT_NATAL_EXCLUDE = new Set(['TrueNode', 'TrueSouthNode', 'TrueLilith', 'AntiVertex']);
+// Натальные орбы (в самой карте, findAspects) специально широкие — так
+// принято для оценки силы натальных аспектов. Для транзитов, наоборот,
+// принято брать более узкий орб (иначе список превращается в десятки почти
+// незначимых "касаний"): держим только заметно точные попадания.
+const TRANSIT_MAX_ORB = {
+  conjunction: 3, opposition: 3, square: 2.5, trine: 2.5, sextile: 2,
+  quincunx: 1.5, semisextile: 1.2, semisquare: 1.2, sesquiquadrate: 1.2,
+};
+const TRANSIT_LIST_LIMIT = 14;
+// Грамматический род названий планет/точек — чтобы "транзитный/-ая/-ое" и
+// "твой/твоя/твоё натальный/-ая/-ое" согласовывались с именем (русский язык
+// требует согласования рода прилагательного с существительным: "транзитная
+// Луна", но "транзитный Меркурий" — иначе текст читается как ошибка).
+const RU_GENDER = {
+  Sun: 'n', Moon: 'f', Mercury: 'm', Venus: 'f', Mars: 'm', Jupiter: 'm', Saturn: 'm',
+  Uranus: 'm', Neptune: 'm', Pluto: 'm', Chiron: 'm',
+  MeanNode: 'm', TrueNode: 'm', MeanSouthNode: 'm', TrueSouthNode: 'm',
+  MeanLilith: 'f', TrueLilith: 'f', PartOfFortune: 'm', Vertex: 'm', AntiVertex: 'm',
+};
+const RU_ADJ = { m: { transit: 'Транзитный', natal: 'натальный', pos: 'твой' }, f: { transit: 'Транзитная', natal: 'натальная', pos: 'твоя' }, n: { transit: 'Транзитное', natal: 'натальное', pos: 'твоё' } };
+const TRANSIT_SPEED_HINT = {
+  Sun: 'меняется за смену знака ~раз в месяц, точный аспект держится 1-2 дня',
+  Moon: 'самая быстрая точка карты — точный аспект держится всего несколько часов',
+  Mercury: 'дни (заметно дольше во время ретроградности)',
+  Venus: 'дни — недели',
+  Mars: 'недели',
+  Jupiter: 'недели — месяцы',
+  Saturn: 'месяцы, иногда с повторами из-за ретроградности',
+  Uranus: 'месяцы — годы',
+  Neptune: 'годы',
+  Pluto: 'годы — самая медленная и долгоиграющая планета из отслеживаемых здесь',
+  Chiron: 'месяцы — годы',
+};
+
+function todayDateStr() {
+  const now = new Date();
+  const y = now.getFullYear(), m = String(now.getMonth() + 1).padStart(2, '0'), d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+transitDateEl.value = todayDateStr();
+
+function resetTransits() {
+  transitBodyEl.classList.remove('active');
+  transitBodyEl.innerHTML = '';
+  transitStatusEl.textContent = '';
+  transitGenerateBtn.textContent = 'Показать транзиты';
+}
+
+function renderTransits() {
+  try {
+    const dateStr = transitDateEl.value;
+    if (!dateStr) { transitStatusEl.textContent = 'Укажи дату.'; return; }
+    const [ty, tm, td] = dateStr.split('-').map(Number);
+    const isToday = dateStr === todayDateStr();
+    // "Сегодня" — точный текущий момент (самое интересное — "что происходит
+    // прямо сейчас"); любая другая дата — полдень UTC этого дня как
+    // представительный момент суток (в пределах дня быстрые точки вроде Луны
+    // всё равно сдвигаются на несколько градусов — см. подсказку о скорости).
+    const targetUtc = isToday ? new Date() : new Date(Date.UTC(ty, tm - 1, td, 12, 0, 0));
+
+    const natalFull = AstraEngine.calculateNatalChart(currentBirthMoment, currentBirthLocation, { houseSystem: currentSystem });
+    const transitMoment = { utc: targetUtc, timeKnown: true };
+    const result = AstraEngine.calculateTransits(natalFull, transitMoment, currentBirthLocation);
+
+    const positions = result.transitingPoints.filter((p) => TRANSIT_TRACKED_PLANETS.includes(p.name));
+    const posHtml = positions.map((p) => {
+      const natalHouse = result.transitingPointHouses[p.name];
+      const houseNote = natalHouse ? ` · в твоём ${natalHouse}-м доме` : '';
+      return `<div class="transit-pos-item"><span class="transit-pos-name">${PLANET_GLYPH[p.name] || ''} ${PLANET_NAME_RU[p.name] || p.name}</span>` +
+        `<span class="transit-pos-detail">${SIGN_NAME_RU[p.sign]} ${p.degreeInSign.toFixed(1)}°${p.isRetrograde ? ' ℞' : ''}${houseNote}</span></div>`;
+    }).join('');
+
+    const allHits = result.aspectsToNatal
+      .map((a) => {
+        const tRaw = String(a.pointA).startsWith('T:') ? a.pointA : a.pointB;
+        const nRaw = String(a.pointA).startsWith('N:') ? a.pointA : a.pointB;
+        return { transitPlanet: String(tRaw).slice(2), natalPlanet: String(nRaw).slice(2), type: a.type, orb: a.orb, applying: a.applying };
+      })
+      .filter((a) => TRANSIT_TRACKED_PLANETS.includes(a.transitPlanet) && !TRANSIT_NATAL_EXCLUDE.has(a.natalPlanet))
+      // у транзитов принят более узкий орб, чем у натальных аспектов —
+      // иначе список превращается в десятки едва заметных "касаний"
+      // (см. TRANSIT_MAX_ORB выше)
+      .filter((a) => a.orb <= (TRANSIT_MAX_ORB[a.type] ?? a.orb))
+      .sort((a, b) => a.orb - b.orb);
+
+    const hits = allHits.slice(0, TRANSIT_LIST_LIMIT);
+    const hiddenCount = allHits.length - hits.length;
+
+    const hitsHtml = hits.length ? hits.map((a) => {
+      const frame = ASPECT_FRAME[a.type];
+      const tGender = RU_GENDER[a.transitPlanet] || 'm';
+      const nGender = RU_GENDER[a.natalPlanet] || 'm';
+      const tPhrase = `${RU_ADJ[tGender].transit} ${PLANET_NAME_RU[a.transitPlanet] || a.transitPlanet}`;
+      const nPhrase = `${RU_ADJ[nGender].pos} ${RU_ADJ[nGender].natal} ${PLANET_NAME_RU[a.natalPlanet] || a.natalPlanet}`;
+      const text = frame ? frame.text(tPhrase, nPhrase) : `${tPhrase} образует ${ASPECT_NAME_RU[a.type] || a.type} к ${nPhrase}.`;
+      const speedHint = TRANSIT_SPEED_HINT[a.transitPlanet] ? ` Типичная продолжительность такого транзита: ${TRANSIT_SPEED_HINT[a.transitPlanet]}.` : '';
+      return `<div class="transit-item"><div class="transit-item-head"><b>${PLANET_NAME_RU[a.transitPlanet] || a.transitPlanet} ${ASPECT_NAME_RU[a.type] || a.type} ${PLANET_NAME_RU[a.natalPlanet] || a.natalPlanet}</b>` +
+        `<span class="transit-orb">орб ${a.orb.toFixed(2)}° · ${a.applying ? 'применяется' : 'расходится'}</span></div>` +
+        `<p>${text}${speedHint}</p></div>`;
+    }).join('') + (hiddenCount > 0
+      ? `<p class="transit-empty">Показаны ${hits.length} самых точных попаданий из ${allHits.length} — остальные ${hiddenCount} с ещё более широким орбом (то есть звучат ещё тише) скрыты, чтобы список оставался читаемым.</p>`
+      : '')
+      : '<p class="transit-empty">Точных аспектов транзитных планет к натальным точкам на эту дату нет (в пределах узкого «транзитного» орба) — относительное затишье, ни одна тема сейчас особо не подсвечена извне.</p>';
+
+    const timeNote = !natalFull.meta.timeKnown
+      ? '<p class="transit-time-note">Время рождения неизвестно (карта построена как solar chart) — дома транзитных планет здесь ориентировочные, привязаны к упрощённым куспидам от знака Солнца, а не к настоящему времени суток.</p>'
+      : '';
+
+    transitBodyEl.innerHTML = timeNote + `<div class="transit-positions">${posHtml}</div>` + `<div class="transit-list">${hitsHtml}</div>`;
+    transitBodyEl.classList.add('active');
+
+    const dateLabel = isToday
+      ? 'сейчас (' + targetUtc.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ')'
+      : dateStr.split('-').reverse().join('.');
+    transitStatusEl.textContent = `Транзиты на ${dateLabel} — относительно текущей карты, система домов «${HOUSE_SYSTEM_LABEL[currentSystem]}».`;
+    transitGenerateBtn.textContent = 'Обновить';
+  } catch (err) {
+    console.error(err);
+    transitStatusEl.textContent = 'Не удалось посчитать транзиты: ' + (err && err.message ? err.message : String(err));
+  }
+}
+
+transitGenerateBtn.addEventListener('click', renderTransits);
 </script>
 </body>
 </html>
