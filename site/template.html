@@ -451,19 +451,49 @@
   }
   footer a { color: var(--accent); text-decoration: none; }
 
-  /* --- «Глубокая расшифровка» --- */
+  /* --- «Глубокая расшифровка» и соседние блоки (транзиты/прогрессии/соляр/
+     синастрия) --- */
   .interp-section { max-width: 1180px; margin: 0 auto 2rem; padding: 0 2rem; }
   .interp-panel {
-    background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px;
-    padding: 1.6rem 1.8rem; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 2rem 2.2rem; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
+  .interp-panel:hover { border-color: var(--accent-dim); box-shadow: 0 8px 28px -18px rgba(0,0,0,0.5); }
   .interp-panel h2 {
     display: flex; align-items: center; gap: 0.6rem;
-    font-family: 'PT Serif', Georgia, serif; color: var(--accent); font-size: 1.35rem; margin: 0 0 0.4rem;
+    font-family: 'PT Serif', Georgia, serif; color: var(--accent); font-size: 1.55rem;
+    letter-spacing: 0.015em; margin: 0 0 0.5rem;
   }
-  .interp-panel h2 .section-icon { width: 24px; height: 24px; }
+  .interp-panel h2 .section-icon { width: 26px; height: 26px; }
   .interp-intro { color: var(--text-dim); font-size: 0.85rem; line-height: 1.6; margin: 0 0 1.3rem; max-width: 68ch; }
   .interp-toolbar { display: flex; gap: 0.7rem; align-items: center; margin-bottom: 1.3rem; flex-wrap: wrap; }
+  /* Двухколоночная композиция: текст читаемой ширины слева, крупный
+     тематический астрологический мотив справа — заполняет пустое
+     пространство на широких экранах и визуально балансирует блок (запрос
+     пользователя "по центру, выразительнее, с астрологическими
+     изображениями"). Мотивы — тот же line-art стиль, что у section-icon
+     в заголовках (currentColor, тонкая линия, без заливки/клипарта/
+     градиентов — принцип "Luxury Cosmic Minimalism" из §29 брифа), просто
+     крупнее и детальнее. Каждый блок использует свой мотив, ни один не
+     дублируется. */
+  .interp-panel-layout { display: flex; align-items: center; gap: 2.6rem; }
+  .interp-panel-text { flex: 1 1 auto; min-width: 0; }
+  .interp-panel-art {
+    flex: none; position: relative;
+    width: 200px; height: 200px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .interp-panel-art::before {
+    content: ''; position: absolute; inset: 8%;
+    background: radial-gradient(circle, var(--accent) 0%, transparent 72%);
+    opacity: 0.1; border-radius: 50%; pointer-events: none;
+  }
+  .interp-panel-art svg { position: relative; width: 100%; height: 100%; color: var(--accent); opacity: 0.9; }
+  @media (max-width: 900px) {
+    .interp-panel-layout { flex-direction: column; }
+    .interp-panel-art { order: -1; width: 130px; height: 130px; margin-bottom: 0.4rem; }
+  }
   .interp-btn {
     background: var(--accent-dim); color: #0e0d12; border: none; border-radius: 6px;
     padding: 0.6rem 1.1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;
@@ -804,8 +834,23 @@
 
 <section class="interp-section">
   <div class="interp-panel">
-    <h2><svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><ellipse cx="12" cy="12" rx="9" ry="4.2"/><path d="M19.6 9.4l1.6.4-.6 1.6"/></svg>Текущие транзиты</h2>
-    <p class="interp-intro">Где сейчас (или на выбранную дату) находятся планеты относительно точек твоей натальной карты выше — то, что в астрологии называют транзитами. Тот же движок и та же логика поиска аспектов, что и в самой карте: просто вторая точка отсчёта — не момент рождения, а выбранный момент времени.</p>
+    <div class="interp-panel-layout">
+      <div class="interp-panel-text">
+        <h2><svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><ellipse cx="12" cy="12" rx="9" ry="4.2"/><path d="M19.6 9.4l1.6.4-.6 1.6"/></svg>Текущие транзиты</h2>
+        <p class="interp-intro">Где сейчас (или на выбранную дату) находятся планеты относительно точек твоей натальной карты выше — то, что в астрологии называют транзитами. Тот же движок и та же логика поиска аспектов, что и в самой карте: просто вторая точка отсчёта — не момент рождения, а выбранный момент времени.</p>
+      </div>
+      <div class="interp-panel-art" aria-hidden="true">
+        <svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.1">
+          <circle cx="100" cy="100" r="70" stroke-opacity="0.45"/>
+          <circle cx="100" cy="100" r="46" stroke-opacity="0.7"/>
+          <circle cx="100" cy="100" r="4" fill="currentColor" stroke="none"/>
+          <circle cx="170" cy="100" r="4.5" fill="currentColor" stroke="none"/>
+          <circle cx="100" cy="54" r="3" fill="currentColor" stroke="none"/>
+          <circle cx="65" cy="140" r="3.5" fill="currentColor" stroke="none"/>
+          <path d="M155 60a70 70 0 0 1 15 40" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
     <div class="interp-toolbar">
       <div class="form-row transit-toolbar-date">
         <label for="transit-date">Дата</label>
@@ -821,8 +866,18 @@
 
 <section class="interp-section">
   <div class="interp-panel">
-    <h2><svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><path d="M12 12c0-1.1.9-2 2-2s2 .9 2 2-1.5 3-4 3-5-2-5-5 2.5-6 6-6 7 3 7 7-3.5 8-8 8-9-4-9-9"/></svg>Прогрессии</h2>
-    <p class="interp-intro">Вторичные прогрессии — техника «день за год»: положение планет через N дней после рождения показывает символическое развитие карты за N лет жизни. Прогрессированные планеты движутся медленно (Луна — быстрее всех, около градуса в месяц), поэтому их аспекты к натальным точкам держатся месяцами и годами — это карта долгих внутренних сдвигов, а не сиюминутных событий.</p>
+    <div class="interp-panel-layout">
+      <div class="interp-panel-text">
+        <h2><svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><path d="M12 12c0-1.1.9-2 2-2s2 .9 2 2-1.5 3-4 3-5-2-5-5 2.5-6 6-6 7 3 7 7-3.5 8-8 8-9-4-9-9"/></svg>Прогрессии</h2>
+        <p class="interp-intro">Вторичные прогрессии — техника «день за год»: положение планет через N дней после рождения показывает символическое развитие карты за N лет жизни. Прогрессированные планеты движутся медленно (Луна — быстрее всех, около градуса в месяц), поэтому их аспекты к натальным точкам держатся месяцами и годами — это карта долгих внутренних сдвигов, а не сиюминутных событий.</p>
+      </div>
+      <div class="interp-panel-art" aria-hidden="true">
+        <svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+          <path d="M106.0 100.0 L107.4 101.4 L108.5 103.4 L109.1 105.8 L109.0 108.4 L108.2 111.3 L106.6 114.0 L104.2 116.5 L101.2 118.6 L97.5 120.1 L93.3 120.8 L88.7 120.5 L84.1 119.3 L79.5 116.9 L75.3 113.6 L71.7 109.2 L68.9 103.9 L67.1 97.9 L66.6 91.4 L67.4 84.6 L69.5 77.9 L73.1 71.4 L78.1 65.5 L84.4 60.6 L91.8 56.8 L100.0 54.4 L108.8 53.7 L117.9 54.7 L127.0 57.5 L135.5 62.2 L143.3 68.6 L149.8 76.5 L154.9 85.9 L158.1 96.3 L159.4 107.5 L158.4 119.0 L155.2 130.4 L149.8 141.2 L142.2 151.0 L132.6 159.4 L121.4 165.9 L108.9 170.4 L95.4 172.4 L81.6 171.8 L67.8 168.5 L54.6 162.5 L42.5 154.0 L32.1 143.1 L23.8 130.2 L17.9 115.7 L14.8 100.0 L14.8 83.7 L17.9 67.5 L24.1 51.8 L33.3 37.4 L45.3 24.7 L59.7 14.3"/>
+          <circle cx="106" cy="100" r="2.6" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+    </div>
     <div class="interp-toolbar">
       <div class="form-row transit-toolbar-date">
         <label for="progression-date">Дата (возраст на неё)</label>
@@ -838,8 +893,33 @@
 
 <section class="interp-section">
   <div class="interp-panel">
-    <h2><svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>Solar Return (соляр)</h2>
-    <p class="interp-intro">Карта на точный момент, когда транзитное Солнце возвращается к твоей натальной долготе, — раз в год, около дня рождения. Показывает главные темы предстоящего годового цикла: где именно смещается акцент, пока натальная карта остаётся неизменной основой.</p>
+    <div class="interp-panel-layout">
+      <div class="interp-panel-text">
+        <h2><svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>Solar Return (соляр)</h2>
+        <p class="interp-intro">Карта на точный момент, когда транзитное Солнце возвращается к твоей натальной долготе, — раз в год, около дня рождения. Показывает главные темы предстоящего годового цикла: где именно смещается акцент, пока натальная карта остаётся неизменной основой.</p>
+      </div>
+      <div class="interp-panel-art" aria-hidden="true">
+        <svg viewBox="0 0 200 200" fill="none" stroke="currentColor">
+          <circle cx="100" cy="100" r="72" stroke-width="0.6" stroke-opacity="0.4"/>
+          <circle cx="100" cy="100" r="30" stroke-width="1.4"/>
+          <circle cx="100" cy="100" r="3.5" fill="currentColor" stroke="none"/>
+          <g stroke-width="1.2" stroke-linecap="round">
+            <line x1="136.0" y1="100.0" x2="154.0" y2="100.0"/>
+            <line x1="131.2" y1="118.0" x2="139.8" y2="123.0"/>
+            <line x1="118.0" y1="131.2" x2="123.0" y2="139.8"/>
+            <line x1="100.0" y1="136.0" x2="100.0" y2="154.0"/>
+            <line x1="82.0" y1="131.2" x2="77.0" y2="139.8"/>
+            <line x1="68.8" y1="118.0" x2="60.2" y2="123.0"/>
+            <line x1="64.0" y1="100.0" x2="46.0" y2="100.0"/>
+            <line x1="68.8" y1="82.0" x2="60.2" y2="77.0"/>
+            <line x1="82.0" y1="68.8" x2="77.0" y2="60.2"/>
+            <line x1="100.0" y1="64.0" x2="100.0" y2="46.0"/>
+            <line x1="118.0" y1="68.8" x2="123.0" y2="60.2"/>
+            <line x1="131.2" y1="82.0" x2="139.8" y2="77.0"/>
+          </g>
+        </svg>
+      </div>
+    </div>
     <div class="interp-toolbar">
       <div class="form-row transit-toolbar-date" style="min-width:7rem;">
         <label for="solar-return-year">Год</label>
@@ -855,8 +935,24 @@
 
 <section class="interp-section">
   <div class="interp-panel">
-    <h2><svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="9" cy="12" r="6.5"/><circle cx="15" cy="12" r="6.5"/></svg>Синастрия</h2>
-    <p class="interp-intro">Совместимость двух карт: аспекты между твоими планетами и планетами второго человека, наложение домов (в какие сферы жизни друг друга вы попадаете) и композитная карта — символическая «карта самих отношений», построенная по средним точкам между вашими планетами и куспидами домов.</p>
+    <div class="interp-panel-layout">
+      <div class="interp-panel-text">
+        <h2><svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="9" cy="12" r="6.5"/><circle cx="15" cy="12" r="6.5"/></svg>Синастрия</h2>
+        <p class="interp-intro">Совместимость двух карт: аспекты между твоими планетами и планетами второго человека, наложение домов (в какие сферы жизни друг друга вы попадаете) и композитная карта — символическая «карта самих отношений», построенная по средним точкам между вашими планетами и куспидами домов.</p>
+      </div>
+      <div class="interp-panel-art" aria-hidden="true">
+        <svg viewBox="0 0 200 200" fill="none" stroke="currentColor">
+          <circle cx="78" cy="100" r="52" stroke-width="1.2"/>
+          <circle cx="122" cy="100" r="52" stroke-width="1.2"/>
+          <circle cx="60" cy="80" r="3" fill="currentColor" stroke="none"/>
+          <circle cx="70" cy="130" r="3" fill="currentColor" stroke="none"/>
+          <circle cx="140" cy="75" r="3" fill="currentColor" stroke="none"/>
+          <circle cx="135" cy="125" r="3" fill="currentColor" stroke="none"/>
+          <path d="M60 80 L140 75" stroke-width="0.9" stroke-opacity="0.55"/>
+          <path d="M70 130 L135 125" stroke-width="0.9" stroke-opacity="0.55"/>
+        </svg>
+      </div>
+    </div>
     <div class="synastry-form-grid">
       <div class="form-row">
         <label for="synastry-b-name">Имя второго человека</label>
@@ -907,8 +1003,21 @@
 
 <section class="interp-section">
   <div class="interp-panel">
-    <h2><svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5.5c-1.6-1-4-1.4-6-1v13c2 0 4.4.4 6 1.4 1.6-1 4-1.4 6-1.4V4.5c-2-.4-4.4 0-6 1Z"/><path d="M12 5.5v13"/></svg>Глубокая расшифровка</h2>
-    <p class="interp-intro">Текстовый интерпретационный слой поверх точных данных карты выше: по умолчанию — правило-ориентированный движок (без AI и без сервера, работает прямо в этой странице), который собирает связный разбор из положения планет по знакам и домам, достоинств и аспектов. У каждого раздела указано основание — конкретные элементы карты, на которых он построен. Опционально, если подключён отдельный сервис (см. ниже), тот же расчёт можно передать Claude для более живого персонализированного текста.</p>
+    <div class="interp-panel-layout">
+      <div class="interp-panel-text">
+        <h2><svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5.5c-1.6-1-4-1.4-6-1v13c2 0 4.4.4 6 1.4 1.6-1 4-1.4 6-1.4V4.5c-2-.4-4.4 0-6 1Z"/><path d="M12 5.5v13"/></svg>Глубокая расшифровка</h2>
+        <p class="interp-intro">Текстовый интерпретационный слой поверх точных данных карты выше: по умолчанию — правило-ориентированный движок (без AI и без сервера, работает прямо в этой странице), который собирает связный разбор из положения планет по знакам и домам, достоинств и аспектов. У каждого раздела указано основание — конкретные элементы карты, на которых он построен. Опционально, если подключён отдельный сервис (см. ниже), тот же расчёт можно передать Claude для более живого персонализированного текста.</p>
+      </div>
+      <div class="interp-panel-art" aria-hidden="true">
+        <svg viewBox="0 0 200 200" fill="none" stroke="currentColor">
+          <path d="M100 70c-14-9-34-12-52-8v78c18-4 38-1 52 8 14-9 34-12 52-8V62c-18-4-38-1-52 8Z" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M100 70v78" stroke-width="1.1"/>
+          <circle cx="145" cy="48" r="2.4" fill="currentColor" stroke="none"/>
+          <circle cx="158" cy="60" r="1.6" fill="currentColor" stroke="none"/>
+          <circle cx="134" cy="38" r="1.4" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+    </div>
     <div class="interp-toolbar">
       <button id="interp-generate-btn" class="interp-btn" type="button">Сформировать расшифровку</button>
       <button id="interp-pdf-btn" class="interp-btn secondary" type="button" style="display:none;">Скачать PDF</button>
