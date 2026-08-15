@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Сборка (tsc)
+        run: npm run build
+
+      - name: Тесты движка (структурные самотесты + сверка с эталонной картой)
+        run: npm test
+
+      - name: Сборка демо-страницы (проверка, что index.html собирается без ошибок)
+        run: npm run build:site
