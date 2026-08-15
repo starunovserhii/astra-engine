@@ -273,6 +273,28 @@
     .interp-section { padding: 0 1rem; }
     .interp-panel { padding: 1.2rem 1.3rem; }
   }
+
+  /* --- «Текущие транзиты» --- */
+  .transit-toolbar-date { margin: 0; min-width: 10.5rem; }
+  .transit-toolbar-date label { margin-bottom: 0.28rem; }
+  .transit-positions {
+    display: flex; flex-wrap: wrap; gap: 0.55rem 1.5rem; margin-bottom: 1.2rem;
+    padding-bottom: 1.1rem; border-bottom: 1px solid var(--border);
+  }
+  .transit-pos-item { display: flex; flex-direction: column; gap: 0.1rem; min-width: 9.5rem; }
+  .transit-pos-name { color: var(--text); font-weight: 600; font-size: 0.88rem; }
+  .transit-pos-detail { color: var(--text-dim); font-size: 0.76rem; }
+  .transit-list { display: flex; flex-direction: column; }
+  .transit-item { border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem; }
+  .transit-item:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+  .transit-item-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 0.35rem; }
+  .transit-item-head b { font-family: Georgia, serif; font-size: 1rem; color: var(--text); font-weight: 600; }
+  .transit-orb { font-size: 0.74rem; color: var(--accent); white-space: nowrap; }
+  .transit-item p { font-size: 0.9rem; line-height: 1.65; margin: 0; max-width: 74ch; }
+  .transit-empty { color: var(--text-dim); font-size: 0.88rem; }
+  .transit-time-note { font-size: 0.74rem; color: var(--text-dim); font-style: italic; margin: 0 0 1.2rem; }
+  #transit-body { display: none; }
+  #transit-body.active { display: block; }
 </style>
 </head>
 <body>
@@ -387,6 +409,23 @@
 
 <section class="interp-section">
   <div class="interp-panel">
+    <h2>Текущие транзиты</h2>
+    <p class="interp-intro">Где сейчас (или на выбранную дату) находятся планеты относительно точек твоей натальной карты выше — то, что в астрологии называют транзитами. Тот же движок и та же логика поиска аспектов, что и в самой карте: просто вторая точка отсчёта — не момент рождения, а выбранный момент времени.</p>
+    <div class="interp-toolbar">
+      <div class="form-row transit-toolbar-date">
+        <label for="transit-date">Дата</label>
+        <input type="date" id="transit-date">
+      </div>
+      <button id="transit-generate-btn" class="interp-btn" type="button">Показать транзиты</button>
+      <span id="transit-status" class="interp-status"></span>
+    </div>
+    <div id="transit-body"></div>
+    <p class="interp-disclaimer">Транзиты — динамическая, а не постоянная картина: у быстрых планет (Луна, Меркурий, Венера, Марс) аспект длится часы—дни, у медленных (Юпитер—Плутон) — недели—годы, это указано у каждого пункта. Как и «Глубокая расшифровка» ниже, это инструмент для размышления о текущем моменте, а не предсказание конкретных событий.</p>
+  </div>
+</section>
+
+<section class="interp-section">
+  <div class="interp-panel">
     <h2>Глубокая расшифровка</h2>
     <p class="interp-intro">Текстовый интерпретационный слой поверх точных данных карты выше: правило-ориентированный движок (без AI и без сервера — работает прямо в этой странице), который собирает связный разбор из положения планет по знакам и домам, достоинств и аспектов. У каждого раздела указано основание — конкретные элементы карты, на которых он построен.</p>
     <div class="interp-toolbar">
@@ -407,6 +446,15 @@
 <script src="astra-engine.bundle.js"></script>
 <script>
 let DATA = {"meta":{"label":"Пример натальной карты — демонстрация ASTRA Engine (условные данные, 15.06.1990, 08:30, Москва)","engineVersion":"0.1.0","houseSystemDefault":"placidus"},"points":[{"name":"Sun","longitude":83.9901,"sign":"Gemini","degreeInSign":23.99,"isRetrograde":false},{"name":"Moon","longitude":343.4135,"sign":"Pisces","degreeInSign":13.41,"isRetrograde":false},{"name":"Mercury","longitude":65.441,"sign":"Gemini","degreeInSign":5.44,"isRetrograde":false},{"name":"Venus","longitude":48.6059,"sign":"Taurus","degreeInSign":18.61,"isRetrograde":false},{"name":"Mars","longitude":10.9362,"sign":"Aries","degreeInSign":10.94,"isRetrograde":false},{"name":"Jupiter","longitude":105.8579,"sign":"Cancer","degreeInSign":15.86,"isRetrograde":false},{"name":"Saturn","longitude":294.0404,"sign":"Capricorn","degreeInSign":24.04,"isRetrograde":true},{"name":"Uranus","longitude":278.1696,"sign":"Capricorn","degreeInSign":8.17,"isRetrograde":true},{"name":"Neptune","longitude":283.7205,"sign":"Capricorn","degreeInSign":13.72,"isRetrograde":true},{"name":"Pluto","longitude":225.4051,"sign":"Scorpio","degreeInSign":15.41,"isRetrograde":true},{"name":"Chiron","longitude":43.216,"sign":"Taurus","degreeInSign":13.22,"isRetrograde":false},{"name":"MeanNode","longitude":309.702,"sign":"Aquarius","degreeInSign":9.7,"isRetrograde":true},{"name":"MeanSouthNode","longitude":129.702,"sign":"Leo","degreeInSign":9.7,"isRetrograde":true},{"name":"TrueNode","longitude":307.9205,"sign":"Aquarius","degreeInSign":7.92,"isRetrograde":true},{"name":"TrueSouthNode","longitude":127.9205,"sign":"Leo","degreeInSign":7.92,"isRetrograde":true},{"name":"MeanLilith","longitude":234.8729,"sign":"Scorpio","degreeInSign":24.87,"isRetrograde":false},{"name":"TrueLilith","longitude":231.1546,"sign":"Scorpio","degreeInSign":21.15,"isRetrograde":false},{"name":"Vertex","longitude":327.8151,"sign":"Aquarius","degreeInSign":27.82,"isRetrograde":false},{"name":"AntiVertex","longitude":147.8151,"sign":"Leo","degreeInSign":27.82,"isRetrograde":false},{"name":"PartOfFortune","longitude":65.1151,"sign":"Gemini","degreeInSign":5.12,"isRetrograde":false}],"dignities":{"Mercury":"rulership","Venus":"rulership","Mars":"rulership","Jupiter":"exaltation","Saturn":"rulership","Pluto":"rulership"},"aspects":[{"a":"Sun","b":"Saturn","type":"quincunx","orb":0.05,"applying":true},{"a":"Sun","b":"MeanNode","type":"sesquiquadrate","orb":0.71,"applying":true},{"a":"Sun","b":"MeanSouthNode","type":"semisquare","orb":0.71,"applying":true},{"a":"Sun","b":"TrueNode","type":"sesquiquadrate","orb":1.07,"applying":false},{"a":"Sun","b":"TrueSouthNode","type":"semisquare","orb":1.07,"applying":false},{"a":"Sun","b":"MeanLilith","type":"quincunx","orb":0.88,"applying":true},{"a":"Sun","b":"TrueLilith","type":"quincunx","orb":2.84,"applying":false},{"a":"Sun","b":"Vertex","type":"trine","orb":3.82,"applying":true},{"a":"Sun","b":"AntiVertex","type":"sextile","orb":3.82,"applying":true},{"a":"Moon","b":"Mercury","type":"square","orb":7.97,"applying":false},{"a":"Moon","b":"Venus","type":"sextile","orb":5.19,"applying":true},{"a":"Moon","b":"Mars","type":"semisextile","orb":2.48,"applying":false},{"a":"Moon","b":"Jupiter","type":"trine","orb":2.44,"applying":true},{"a":"Moon","b":"Uranus","type":"sextile","orb":5.24,"applying":false},{"a":"Moon","b":"Neptune","type":"sextile","orb":0.31,"applying":true},{"a":"Moon","b":"Pluto","type":"trine","orb":1.99,"applying":true},{"a":"Moon","b":"Chiron","type":"sextile","orb":0.2,"applying":false},{"a":"Moon","b":"MeanNode","type":"semisextile","orb":3.71,"applying":false},{"a":"Moon","b":"MeanSouthNode","type":"quincunx","orb":3.71,"applying":false},{"a":"Moon","b":"TrueLilith","type":"trine","orb":7.74,"applying":true},{"a":"Moon","b":"PartOfFortune","type":"square","orb":8.3,"applying":false},{"a":"Mercury","b":"Uranus","type":"quincunx","orb":2.73,"applying":true},{"a":"Mercury","b":"MeanNode","type":"trine","orb":4.26,"applying":true},{"a":"Mercury","b":"MeanSouthNode","type":"sextile","orb":4.26,"applying":true},{"a":"Mercury","b":"TrueNode","type":"trine","orb":2.48,"applying":true},{"a":"Mercury","b":"TrueSouthNode","type":"sextile","orb":2.48,"applying":true},{"a":"Mercury","b":"PartOfFortune","type":"conjunction","orb":0.33,"applying":false},{"a":"Venus","b":"Jupiter","type":"sextile","orb":2.75,"applying":false},{"a":"Venus","b":"Saturn","type":"trine","orb":5.43,"applying":true},{"a":"Venus","b":"Neptune","type":"trine","orb":4.89,"applying":false},{"a":"Venus","b":"Pluto","type":"opposition","orb":3.2,"applying":false},{"a":"Venus","b":"Chiron","type":"conjunction","orb":5.39,"applying":false},{"a":"Venus","b":"MeanLilith","type":"opposition","orb":6.27,"applying":true},{"a":"Venus","b":"TrueLilith","type":"opposition","orb":2.55,"applying":true},{"a":"Mars","b":"Jupiter","type":"square","orb":4.92,"applying":true},{"a":"Mars","b":"Uranus","type":"square","orb":2.77,"applying":false},{"a":"Mars","b":"Neptune","type":"square","orb":2.78,"applying":true},{"a":"Mars","b":"MeanNode","type":"sextile","orb":1.23,"applying":false},{"a":"Mars","b":"MeanSouthNode","type":"trine","orb":1.23,"applying":false},{"a":"Mars","b":"TrueNode","type":"sextile","orb":3.02,"applying":false},{"a":"Mars","b":"TrueSouthNode","type":"trine","orb":3.02,"applying":false},{"a":"Mars","b":"MeanLilith","type":"sesquiquadrate","orb":1.06,"applying":false},{"a":"Mars","b":"Vertex","type":"semisquare","orb":1.88,"applying":true},{"a":"Mars","b":"AntiVertex","type":"sesquiquadrate","orb":1.88,"applying":true},{"a":"Jupiter","b":"Uranus","type":"opposition","orb":7.69,"applying":false},{"a":"Jupiter","b":"Neptune","type":"opposition","orb":2.14,"applying":false},{"a":"Jupiter","b":"Pluto","type":"trine","orb":0.45,"applying":false},{"a":"Jupiter","b":"Chiron","type":"sextile","orb":2.64,"applying":false},{"a":"Jupiter","b":"TrueLilith","type":"trine","orb":5.3,"applying":true},{"a":"Saturn","b":"MeanLilith","type":"sextile","orb":0.83,"applying":false},{"a":"Saturn","b":"TrueLilith","type":"sextile","orb":2.89,"applying":true},{"a":"Uranus","b":"Neptune","type":"conjunction","orb":5.55,"applying":false},{"a":"Uranus","b":"Chiron","type":"trine","orb":5.05,"applying":false},{"a":"Uranus","b":"MeanNode","type":"semisextile","orb":1.53,"applying":true},{"a":"Uranus","b":"MeanSouthNode","type":"quincunx","orb":1.53,"applying":true},{"a":"Uranus","b":"TrueNode","type":"semisextile","orb":0.25,"applying":false},{"a":"Uranus","b":"TrueSouthNode","type":"quincunx","orb":0.25,"applying":false},{"a":"Uranus","b":"MeanLilith","type":"semisquare","orb":1.7,"applying":false},{"a":"Neptune","b":"Pluto","type":"sextile","orb":1.68,"applying":false},{"a":"Neptune","b":"Chiron","type":"trine","orb":0.5,"applying":true},{"a":"Neptune","b":"Vertex","type":"semisquare","orb":0.91,"applying":true},{"a":"Neptune","b":"AntiVertex","type":"sesquiquadrate","orb":0.91,"applying":true},{"a":"Pluto","b":"Chiron","type":"opposition","orb":2.19,"applying":true},{"a":"Pluto","b":"MeanNode","type":"square","orb":5.7,"applying":false},{"a":"Pluto","b":"MeanSouthNode","type":"square","orb":5.7,"applying":false},{"a":"Pluto","b":"TrueLilith","type":"conjunction","orb":5.75,"applying":false},{"a":"Chiron","b":"MeanNode","type":"square","orb":3.51,"applying":false},{"a":"Chiron","b":"MeanSouthNode","type":"square","orb":3.51,"applying":false},{"a":"Chiron","b":"TrueNode","type":"square","orb":5.3,"applying":false},{"a":"Chiron","b":"TrueSouthNode","type":"square","orb":5.3,"applying":false},{"a":"Chiron","b":"TrueLilith","type":"opposition","orb":7.94,"applying":false},{"a":"MeanNode","b":"MeanSouthNode","type":"opposition","orb":0,"applying":false},{"a":"MeanNode","b":"TrueNode","type":"conjunction","orb":1.78,"applying":true},{"a":"MeanNode","b":"TrueSouthNode","type":"opposition","orb":1.78,"applying":true},{"a":"MeanNode","b":"PartOfFortune","type":"trine","orb":4.59,"applying":true},{"a":"MeanSouthNode","b":"TrueNode","type":"opposition","orb":1.78,"applying":true},{"a":"MeanSouthNode","b":"TrueSouthNode","type":"conjunction","orb":1.78,"applying":true},{"a":"MeanSouthNode","b":"PartOfFortune","type":"sextile","orb":4.59,"applying":true},{"a":"TrueNode","b":"TrueSouthNode","type":"opposition","orb":0,"applying":false},{"a":"TrueNode","b":"PartOfFortune","type":"trine","orb":2.81,"applying":true},{"a":"TrueSouthNode","b":"PartOfFortune","type":"sextile","orb":2.81,"applying":true},{"a":"MeanLilith","b":"TrueLilith","type":"conjunction","orb":3.72,"applying":true},{"a":"MeanLilith","b":"Vertex","type":"square","orb":2.94,"applying":true},{"a":"MeanLilith","b":"AntiVertex","type":"square","orb":2.94,"applying":true},{"a":"TrueLilith","b":"Vertex","type":"square","orb":6.66,"applying":true},{"a":"TrueLilith","b":"AntiVertex","type":"square","orb":6.66,"applying":true},{"a":"Vertex","b":"AntiVertex","type":"opposition","orb":0,"applying":false}],"housesBySystem":{"placidus":{"cusps":[165.6917,186.4906,214.1813,250.1173,289.0991,320.9835,345.6917,6.4906,34.1813,70.1173,109.0991,140.9835],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"wholeSign":{"cusps":[150,180,210,240,270,300,330,0,30,60,90,120],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"equal":{"cusps":[165.6917,195.6917,225.6917,255.6917,285.6917,315.6917,345.6917,15.6917,45.6917,75.6917,105.6917,135.6917],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"koch":{"cusps":[165.6917,193.7004,221.4863,250.1173,289.2153,317.9103,345.6917,13.7004,41.4863,70.1173,109.2153,137.9103],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"regiomontanus":{"cusps":[165.6917,185.9604,211.6322,250.1173,293.3777,323.9902,345.6917,5.9604,31.6322,70.1173,113.3777,143.9902],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"campanus":{"cusps":[165.6917,198.2422,225.2669,250.1173,277.1009,309.5936,345.6917,18.2422,45.2669,70.1173,97.1009,129.5936],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"porphyry":{"cusps":[165.6917,193.8336,221.9754,250.1173,281.9754,313.8336,345.6917,13.8336,41.9754,70.1173,101.9754,133.8336],"ascendant":165.6917,"midheaven":70.1173,"reliable":true},"alcabitius":{"cusps":[165.6917,183.1864,218.0738,250.1173,280.3584,311.5887,345.6917,3.1864,38.0738,70.1173,100.3584,131.5887],"ascendant":165.6917,"midheaven":70.1173,"reliable":true}},"pointHousesBySystem":{"placidus":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":8,"Jupiter":10,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"wholeSign":{"Sun":10,"Moon":7,"Mercury":10,"Venus":9,"Mars":8,"Jupiter":11,"Saturn":5,"Uranus":5,"Neptune":5,"Pluto":3,"Chiron":9,"MeanNode":6,"MeanSouthNode":12,"TrueNode":6,"TrueSouthNode":12,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":10},"equal":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":11,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":2,"Chiron":8,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"koch":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":10,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"regiomontanus":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":8,"Jupiter":10,"Saturn":5,"Uranus":4,"Neptune":4,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"campanus":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":11,"Saturn":5,"Uranus":5,"Neptune":5,"Pluto":3,"Chiron":8,"MeanNode":6,"MeanSouthNode":12,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"porphyry":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":7,"Jupiter":11,"Saturn":5,"Uranus":4,"Neptune":5,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9},"alcabitius":{"Sun":10,"Moon":6,"Mercury":9,"Venus":9,"Mars":8,"Jupiter":11,"Saturn":5,"Uranus":4,"Neptune":5,"Pluto":3,"Chiron":9,"MeanNode":5,"MeanSouthNode":11,"TrueNode":5,"TrueSouthNode":11,"MeanLilith":3,"TrueLilith":3,"PartOfFortune":9}}};
+
+// Момент и место рождения ТЕКУЩЕЙ карты — хранятся отдельно от DATA (которая
+// содержит только уже готовые для отрисовки факты), потому что транзитам
+// (см. ниже, «Текущие транзиты») нужен полный NatalChartResult движка, а не
+// урезанный DATA — calculateTransits() пересчитывает натальную карту заново.
+// По умолчанию — те же данные, что зашиты в демо-DATA (см.
+// src/__tests__/exportDemo.ts): 15.06.1990, 08:30 UTC, Москва.
+let currentBirthMoment = { utc: new Date(Date.UTC(1990, 5, 15, 8, 30, 0)), timeKnown: true };
+let currentBirthLocation = { latitude: 55.751244, longitude: 37.618423, label: 'Москва' };
 
 const SIGNS = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
 // ︎ — селектор текстового (не эмодзи) начертания: без него некоторые
@@ -9853,6 +9901,8 @@ document.getElementById('calc-btn').addEventListener('click', () => {
     DATA = buildChartData(moment, location, label);
     currentSystem = DATA.meta.houseSystemDefault;
     selectedPoint = null;
+    currentBirthMoment = moment;
+    currentBirthLocation = location;
 
     const warnEl = document.getElementById('warn-note');
     warnEl.textContent = 'Это настоящий расчёт по введённым данным (не пример) — движок отдаёт только числа и их источник; текстовый разбор — в разделе «Глубокая расшифровка» ниже.';
@@ -9867,6 +9917,7 @@ document.getElementById('calc-btn').addEventListener('click', () => {
     render();
     setCalcStatus('Карта построена.', 'ok');
     resetInterpretation(); // новая карта — старая расшифровка больше не актуальна
+    resetTransits(); // и транзиты относительно старой карты тоже устарели
   } catch (err) {
     console.error(err);
     setCalcStatus('Не удалось посчитать карту: ' + (err && err.message ? err.message : String(err)), 'error');
@@ -9965,6 +10016,7 @@ interpGenerateBtn.addEventListener('click', renderInterpretation);
 // самой карты — см. resetInterpretation() сразу после setCalcStatus('Карта
 // построена') в обработчике calc-btn выше.
 houseSelect.addEventListener('change', resetInterpretation);
+houseSelect.addEventListener('change', resetTransits); // дом транзитной планеты тоже зависит от системы домов
 
 // --- растеризация SVG-колеса в PNG (для встраивания картинки в PDF) ---
 // Инлайним вычисленные стили в клон, т.к. классы из внешнего <style> не
@@ -10143,6 +10195,156 @@ async function generatePdf() {
 }
 
 interpPdfBtn.addEventListener('click', generatePdf);
+
+// ============================================================================
+// UI «Текущие транзиты»: положения планет на выбранную (по умолчанию —
+// сегодняшнюю) дату относительно натальной карты выше. Использует ровно ту
+// же функцию движка, что и сама карта (AstraEngine.calculateTransits, см.
+// src/charts/transits.ts) — единственная разница со всем остальным сайтом в
+// том, что вторая точка отсчёта не момент рождения, а выбранный момент
+// времени. Текстовая часть переиспользует ASPECT_FRAME из «Глубокой
+// расшифровки» выше (та же формулировка "X и Y образуют..." одинаково
+// применима что к двум натальным планетам, что к транзитной и натальной).
+// ============================================================================
+const transitDateEl = document.getElementById('transit-date');
+const transitGenerateBtn = document.getElementById('transit-generate-btn');
+const transitStatusEl = document.getElementById('transit-status');
+const transitBodyEl = document.getElementById('transit-body');
+
+// Планеты, для которых показываем транзитные положения/аспекты. Транзитные
+// Узлы/Лилит/Vertex сюда сознательно не включены (при этом натальная сторона
+// аспекта не ограничена — транзитный Юпитер к твоему натальному Узлу в
+// списке появится): движение Узлов/Лилит настолько медленное и тонкое, что
+// их транзиты почти не обсуждаются даже в профессиональной практике — это
+// честное ограничение объёма, а не ошибка.
+const TRANSIT_TRACKED_PLANETS = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', 'Chiron'];
+// Натальная сторона аспекта: пропускаем "истинные" дубли средних Узла/Лилит
+// и Антивертекс (он почти совпадает с Вертексом) — иначе один и тот же
+// транзит считается дважды почти одинаковыми парами и раздувает список.
+const TRANSIT_NATAL_EXCLUDE = new Set(['TrueNode', 'TrueSouthNode', 'TrueLilith', 'AntiVertex']);
+// Натальные орбы (в самой карте, findAspects) специально широкие — так
+// принято для оценки силы натальных аспектов. Для транзитов, наоборот,
+// принято брать более узкий орб (иначе список превращается в десятки почти
+// незначимых "касаний"): держим только заметно точные попадания.
+const TRANSIT_MAX_ORB = {
+  conjunction: 3, opposition: 3, square: 2.5, trine: 2.5, sextile: 2,
+  quincunx: 1.5, semisextile: 1.2, semisquare: 1.2, sesquiquadrate: 1.2,
+};
+const TRANSIT_LIST_LIMIT = 14;
+// Грамматический род названий планет/точек — чтобы "транзитный/-ая/-ое" и
+// "твой/твоя/твоё натальный/-ая/-ое" согласовывались с именем (русский язык
+// требует согласования рода прилагательного с существительным: "транзитная
+// Луна", но "транзитный Меркурий" — иначе текст читается как ошибка).
+const RU_GENDER = {
+  Sun: 'n', Moon: 'f', Mercury: 'm', Venus: 'f', Mars: 'm', Jupiter: 'm', Saturn: 'm',
+  Uranus: 'm', Neptune: 'm', Pluto: 'm', Chiron: 'm',
+  MeanNode: 'm', TrueNode: 'm', MeanSouthNode: 'm', TrueSouthNode: 'm',
+  MeanLilith: 'f', TrueLilith: 'f', PartOfFortune: 'm', Vertex: 'm', AntiVertex: 'm',
+};
+const RU_ADJ = { m: { transit: 'Транзитный', natal: 'натальный', pos: 'твой' }, f: { transit: 'Транзитная', natal: 'натальная', pos: 'твоя' }, n: { transit: 'Транзитное', natal: 'натальное', pos: 'твоё' } };
+const TRANSIT_SPEED_HINT = {
+  Sun: 'меняется за смену знака ~раз в месяц, точный аспект держится 1-2 дня',
+  Moon: 'самая быстрая точка карты — точный аспект держится всего несколько часов',
+  Mercury: 'дни (заметно дольше во время ретроградности)',
+  Venus: 'дни — недели',
+  Mars: 'недели',
+  Jupiter: 'недели — месяцы',
+  Saturn: 'месяцы, иногда с повторами из-за ретроградности',
+  Uranus: 'месяцы — годы',
+  Neptune: 'годы',
+  Pluto: 'годы — самая медленная и долгоиграющая планета из отслеживаемых здесь',
+  Chiron: 'месяцы — годы',
+};
+
+function todayDateStr() {
+  const now = new Date();
+  const y = now.getFullYear(), m = String(now.getMonth() + 1).padStart(2, '0'), d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+transitDateEl.value = todayDateStr();
+
+function resetTransits() {
+  transitBodyEl.classList.remove('active');
+  transitBodyEl.innerHTML = '';
+  transitStatusEl.textContent = '';
+  transitGenerateBtn.textContent = 'Показать транзиты';
+}
+
+function renderTransits() {
+  try {
+    const dateStr = transitDateEl.value;
+    if (!dateStr) { transitStatusEl.textContent = 'Укажи дату.'; return; }
+    const [ty, tm, td] = dateStr.split('-').map(Number);
+    const isToday = dateStr === todayDateStr();
+    // "Сегодня" — точный текущий момент (самое интересное — "что происходит
+    // прямо сейчас"); любая другая дата — полдень UTC этого дня как
+    // представительный момент суток (в пределах дня быстрые точки вроде Луны
+    // всё равно сдвигаются на несколько градусов — см. подсказку о скорости).
+    const targetUtc = isToday ? new Date() : new Date(Date.UTC(ty, tm - 1, td, 12, 0, 0));
+
+    const natalFull = AstraEngine.calculateNatalChart(currentBirthMoment, currentBirthLocation, { houseSystem: currentSystem });
+    const transitMoment = { utc: targetUtc, timeKnown: true };
+    const result = AstraEngine.calculateTransits(natalFull, transitMoment, currentBirthLocation);
+
+    const positions = result.transitingPoints.filter((p) => TRANSIT_TRACKED_PLANETS.includes(p.name));
+    const posHtml = positions.map((p) => {
+      const natalHouse = result.transitingPointHouses[p.name];
+      const houseNote = natalHouse ? ` · в твоём ${natalHouse}-м доме` : '';
+      return `<div class="transit-pos-item"><span class="transit-pos-name">${PLANET_GLYPH[p.name] || ''} ${PLANET_NAME_RU[p.name] || p.name}</span>` +
+        `<span class="transit-pos-detail">${SIGN_NAME_RU[p.sign]} ${p.degreeInSign.toFixed(1)}°${p.isRetrograde ? ' ℞' : ''}${houseNote}</span></div>`;
+    }).join('');
+
+    const allHits = result.aspectsToNatal
+      .map((a) => {
+        const tRaw = String(a.pointA).startsWith('T:') ? a.pointA : a.pointB;
+        const nRaw = String(a.pointA).startsWith('N:') ? a.pointA : a.pointB;
+        return { transitPlanet: String(tRaw).slice(2), natalPlanet: String(nRaw).slice(2), type: a.type, orb: a.orb, applying: a.applying };
+      })
+      .filter((a) => TRANSIT_TRACKED_PLANETS.includes(a.transitPlanet) && !TRANSIT_NATAL_EXCLUDE.has(a.natalPlanet))
+      // у транзитов принят более узкий орб, чем у натальных аспектов —
+      // иначе список превращается в десятки едва заметных "касаний"
+      // (см. TRANSIT_MAX_ORB выше)
+      .filter((a) => a.orb <= (TRANSIT_MAX_ORB[a.type] ?? a.orb))
+      .sort((a, b) => a.orb - b.orb);
+
+    const hits = allHits.slice(0, TRANSIT_LIST_LIMIT);
+    const hiddenCount = allHits.length - hits.length;
+
+    const hitsHtml = hits.length ? hits.map((a) => {
+      const frame = ASPECT_FRAME[a.type];
+      const tGender = RU_GENDER[a.transitPlanet] || 'm';
+      const nGender = RU_GENDER[a.natalPlanet] || 'm';
+      const tPhrase = `${RU_ADJ[tGender].transit} ${PLANET_NAME_RU[a.transitPlanet] || a.transitPlanet}`;
+      const nPhrase = `${RU_ADJ[nGender].pos} ${RU_ADJ[nGender].natal} ${PLANET_NAME_RU[a.natalPlanet] || a.natalPlanet}`;
+      const text = frame ? frame.text(tPhrase, nPhrase) : `${tPhrase} образует ${ASPECT_NAME_RU[a.type] || a.type} к ${nPhrase}.`;
+      const speedHint = TRANSIT_SPEED_HINT[a.transitPlanet] ? ` Типичная продолжительность такого транзита: ${TRANSIT_SPEED_HINT[a.transitPlanet]}.` : '';
+      return `<div class="transit-item"><div class="transit-item-head"><b>${PLANET_NAME_RU[a.transitPlanet] || a.transitPlanet} ${ASPECT_NAME_RU[a.type] || a.type} ${PLANET_NAME_RU[a.natalPlanet] || a.natalPlanet}</b>` +
+        `<span class="transit-orb">орб ${a.orb.toFixed(2)}° · ${a.applying ? 'применяется' : 'расходится'}</span></div>` +
+        `<p>${text}${speedHint}</p></div>`;
+    }).join('') + (hiddenCount > 0
+      ? `<p class="transit-empty">Показаны ${hits.length} самых точных попаданий из ${allHits.length} — остальные ${hiddenCount} с ещё более широким орбом (то есть звучат ещё тише) скрыты, чтобы список оставался читаемым.</p>`
+      : '')
+      : '<p class="transit-empty">Точных аспектов транзитных планет к натальным точкам на эту дату нет (в пределах узкого «транзитного» орба) — относительное затишье, ни одна тема сейчас особо не подсвечена извне.</p>';
+
+    const timeNote = !natalFull.meta.timeKnown
+      ? '<p class="transit-time-note">Время рождения неизвестно (карта построена как solar chart) — дома транзитных планет здесь ориентировочные, привязаны к упрощённым куспидам от знака Солнца, а не к настоящему времени суток.</p>'
+      : '';
+
+    transitBodyEl.innerHTML = timeNote + `<div class="transit-positions">${posHtml}</div>` + `<div class="transit-list">${hitsHtml}</div>`;
+    transitBodyEl.classList.add('active');
+
+    const dateLabel = isToday
+      ? 'сейчас (' + targetUtc.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ')'
+      : dateStr.split('-').reverse().join('.');
+    transitStatusEl.textContent = `Транзиты на ${dateLabel} — относительно текущей карты, система домов «${HOUSE_SYSTEM_LABEL[currentSystem]}».`;
+    transitGenerateBtn.textContent = 'Обновить';
+  } catch (err) {
+    console.error(err);
+    transitStatusEl.textContent = 'Не удалось посчитать транзиты: ' + (err && err.message ? err.message : String(err));
+  }
+}
+
+transitGenerateBtn.addEventListener('click', renderTransits);
 </script>
 </body>
 </html>
