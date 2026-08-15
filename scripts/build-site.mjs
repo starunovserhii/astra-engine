@@ -19,6 +19,11 @@ const root = join(__dirname, '..');
 const dataJson = execSync('npx tsx src/__tests__/exportDemo.ts', { cwd: root, encoding: 'utf-8' });
 JSON.parse(dataJson); // валидация, что вывод — корректный JSON, до записи в файл
 
+// Пересобираем браузерный бандл движка (astra-engine.bundle.js) — страница
+// использует его, чтобы считать карты по данным, которые вводит пользователь,
+// прямо в браузере, а не только показывать один зафиксированный пример.
+execSync('npx esbuild src/index.ts --bundle --format=iife --global-name=AstraEngine --outfile=astra-engine.bundle.js --platform=browser --minify', { cwd: root, stdio: 'inherit' });
+
 const template = readFileSync(join(root, 'site', 'template.html'), 'utf-8');
 const output = template.replace('/*__ASTRA_DEMO_DATA__*/', dataJson);
 
