@@ -9296,6 +9296,30 @@ function findCity(name) {
   return CITIES.find((c) => c.n.toLowerCase() === q);
 }
 
+// Часть городов в базе уточнена регионом в скобках — там, где название
+// совпадает с другим городом (напр. "Донецк (Донецкая область)" и
+// "Донецк (Ростовская Область)", чтобы не путать со всемирно известным
+// городом). Отрезаем это уточнение, чтобы можно было сопоставить ввод
+// без него.
+function cityBaseName(n) {
+  return n.replace(/\s*\([^)]*\)\s*$/, '');
+}
+
+// Более снисходительное разрешение города, чем findCity: если точного
+// совпадения нет (пользователь ввёл имя без уточнения региона), ищем по
+// базовому имени. Один такой город — используем его. Несколько —
+// настоящая коллизия имён, просим уточнить явно.
+function resolveCity(name) {
+  const exact = findCity(name);
+  if (exact) return { city: exact, ambiguous: null };
+  const q = name.trim().toLowerCase();
+  if (!q) return { city: null, ambiguous: null };
+  const baseMatches = CITIES.filter((c) => cityBaseName(c.n).toLowerCase() === q);
+  if (baseMatches.length === 1) return { city: baseMatches[0], ambiguous: null };
+  if (baseMatches.length > 1) return { city: null, ambiguous: baseMatches };
+  return { city: null, ambiguous: null };
+}
+
 // --- "окно координат": показывает найденные широту/долготу/часовой пояс
 // прямо под полем города, чтобы было видно, что именно уйдёт в расчёт,
 // ещё до нажатия "Построить карту" ---
@@ -9318,7 +9342,13 @@ function updateCityCoordsHint() {
     cityCoordsEl.className = 'city-coords';
     return;
   }
-  const city = findCity(name);
+  const { city, ambiguous } = resolveCity(name);
+  if (ambiguous) {
+    cityCoordsEl.textContent = 'С таким названием есть несколько городов — уточни, какой: ' +
+      ambiguous.map((c) => c.n).join(', ');
+    cityCoordsEl.className = 'city-coords not-found';
+    return;
+  }
   if (!city) {
     cityCoordsEl.textContent = 'Город не найден в базе — выбери вариант из списка или укажи координаты вручную.';
     cityCoordsEl.className = 'city-coords not-found';
@@ -9361,7 +9391,13 @@ document.getElementById('calc-btn').addEventListener('click', () => {
       tz = manualTzEl.value;
       location = { latitude: lat, longitude: lon, label: `${lat.toFixed(4)}, ${lon.toFixed(4)}` };
     } else {
-      const city = findCity(birthCityEl.value);
+      const resolved = resolveCity(birthCityEl.value);
+      if (resolved.ambiguous) {
+        setCalcStatus('С таким названием есть несколько городов — уточни, какой: ' +
+          resolved.ambiguous.map((c) => c.n).join(', '), 'error');
+        return;
+      }
+      const city = resolved.city;
       if (!city) { setCalcStatus('Такого города нет в списке — выбери из подсказки или включи ручной ввод координат.', 'error'); return; }
       tz = city.tz;
       location = { latitude: city.lat, longitude: city.lon, label: city.n };
