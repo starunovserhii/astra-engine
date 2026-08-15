@@ -13,7 +13,8 @@ import {
 } from '../types';
 import { getMajorBodyPosition, MajorBody } from '../astronomical/planets';
 import {
-  chironLongitude, meanLilithLongitude, meanNodeLongitude, trueLilithLongitude, trueNodeLongitude,
+  ceresLongitude, chironLongitude, junoLongitude, meanLilithLongitude, meanNodeLongitude,
+  pallasLongitude, trueLilithLongitude, trueNodeLongitude, vestaLongitude,
 } from '../astronomical/specialPoints';
 import { greenwichApparentSiderealTime, localApparentSiderealTime, trueObliquity } from '../astronomical/time';
 import { degreeInSign, essentialDignity, signOf } from '../astrological/signs';
@@ -30,6 +31,8 @@ export interface NatalChartOptions {
   includeNode?: 'mean' | 'true' | 'both' | 'none';
   includeVertex?: boolean;
   includePartOfFortune?: boolean;
+  /** Церера, Паллада, Юнона, Веста — см. astronomical/specialPoints.ts */
+  includeAsteroids?: boolean;
 }
 
 const DEFAULT_OPTIONS: Required<NatalChartOptions> = {
@@ -39,6 +42,7 @@ const DEFAULT_OPTIONS: Required<NatalChartOptions> = {
   includeNode: 'both',
   includeVertex: true,
   includePartOfFortune: true,
+  includeAsteroids: true,
 };
 
 function toPoint(name: PlanetName, longitude: number, latitude: number, speedLongitude: number, distanceAU?: number): EclipticPoint {
@@ -91,6 +95,18 @@ export function calculateNatalChart(
   if (opts.includeLilith === 'true' || opts.includeLilith === 'both') {
     const l = trueLilithLongitude(moment);
     points.push(toPoint('TrueLilith', l.longitude, 0, l.speedLongitude));
+  }
+
+  if (opts.includeAsteroids) {
+    warnings.push('Церера/Паллада/Юнона/Веста: двухтельная кеплеровская орбита от элементов на эпоху 2026-06-09, точность падает при удалении от эпохи — см. astronomical/specialPoints.ts.');
+    const ceres = ceresLongitude(moment);
+    points.push(toPoint('Ceres', ceres.longitude, 0, ceres.speedLongitude));
+    const pallas = pallasLongitude(moment);
+    points.push(toPoint('Pallas', pallas.longitude, 0, pallas.speedLongitude));
+    const juno = junoLongitude(moment);
+    points.push(toPoint('Juno', juno.longitude, 0, juno.speedLongitude));
+    const vesta = vestaLongitude(moment);
+    points.push(toPoint('Vesta', vesta.longitude, 0, vesta.speedLongitude));
   }
 
   const timeKnown = moment.timeKnown;
