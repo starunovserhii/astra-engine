@@ -460,6 +460,15 @@
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .interp-panel:hover { border-color: var(--accent-dim); box-shadow: 0 8px 28px -18px rgba(0,0,0,0.5); }
+  /* Весь контент блока (заголовок+текст+иллюстрация, тулбар, результаты,
+     дисклеймер) центрируется как единая колонка ограниченной ширины
+     внутри широкой панели — по запросу пользователя "по центру". Панель
+     (фон/рамка) по-прежнему занимает всю ширину секции (1180px), но её
+     содержимое больше не растянуто от края до края, а собрано в центре
+     с равными полями по бокам — тот же приём, что уже используют
+     .interp-intro/.interp-disclaimer (max-width + текст), только теперь
+     применён ко всему блоку целиком, включая тулбар и результаты. */
+  .interp-panel-inner { max-width: 900px; margin: 0 auto; }
   .interp-panel h2 {
     display: flex; align-items: center; gap: 0.6rem;
     font-family: 'PT Serif', Georgia, serif; color: var(--accent); font-size: 1.55rem;
@@ -834,6 +843,7 @@
 
 <section class="interp-section">
   <div class="interp-panel">
+    <div class="interp-panel-inner">
     <div class="interp-panel-layout">
       <div class="interp-panel-text">
         <h2><svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><ellipse cx="12" cy="12" rx="9" ry="4.2"/><path d="M19.6 9.4l1.6.4-.6 1.6"/></svg>Текущие транзиты</h2>
@@ -861,11 +871,13 @@
     </div>
     <div id="transit-body"></div>
     <p class="interp-disclaimer">Транзиты — динамическая, а не постоянная картина: у быстрых планет (Луна, Меркурий, Венера, Марс) аспект длится часы—дни, у медленных (Юпитер—Плутон) — недели—годы, это указано у каждого пункта. Как и «Глубокая расшифровка» ниже, это инструмент для размышления о текущем моменте, а не предсказание конкретных событий.</p>
+    </div>
   </div>
 </section>
 
 <section class="interp-section">
   <div class="interp-panel">
+    <div class="interp-panel-inner">
     <div class="interp-panel-layout">
       <div class="interp-panel-text">
         <h2><svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><path d="M12 12c0-1.1.9-2 2-2s2 .9 2 2-1.5 3-4 3-5-2-5-5 2.5-6 6-6 7 3 7 7-3.5 8-8 8-9-4-9-9"/></svg>Прогрессии</h2>
@@ -888,11 +900,13 @@
     </div>
     <div id="progression-body"></div>
     <p class="interp-disclaimer">Прогрессии — символическая, а не буквальная техника (день после рождения ≠ реальный транзит того дня): её ценность в самой пропорции «день за год», проверенной столетиями практики, а не в астрономическом совпадении. Как и другие разделы, это инструмент для размышления, не предсказание.</p>
+    </div>
   </div>
 </section>
 
 <section class="interp-section">
   <div class="interp-panel">
+    <div class="interp-panel-inner">
     <div class="interp-panel-layout">
       <div class="interp-panel-text">
         <h2><svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>Solar Return (соляр)</h2>
@@ -930,11 +944,13 @@
     </div>
     <div id="solar-return-body"></div>
     <p class="interp-disclaimer">Соляр здесь всегда строится на место рождения (классический вариант метода) — часть астрологов вместо этого используют текущее место проживания на момент дня рождения, но это отдельная настройка, которую эта версия не поддерживает. Как и другие разделы, это инструмент для размышления о годовом цикле, а не предсказание конкретных событий.</p>
+    </div>
   </div>
 </section>
 
 <section class="interp-section">
   <div class="interp-panel">
+    <div class="interp-panel-inner">
     <div class="interp-panel-layout">
       <div class="interp-panel-text">
         <h2><svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="9" cy="12" r="6.5"/><circle cx="15" cy="12" r="6.5"/></svg>Синастрия</h2>
@@ -998,11 +1014,13 @@
     </div>
     <div id="synastry-body"></div>
     <p class="interp-disclaimer">Синастрия и композитная карта — инструменты для размышления об отношениях, а не диагноз совместимости и не предсказание их будущего: любые аспекты (даже «напряжённые») проживаются через выбор и осознанность обоих людей, а не автоматически. Данные второго человека нигде не сохраняются — расчёт происходит прямо в этой странице и обнуляется при перезагрузке.</p>
+    </div>
   </div>
 </section>
 
 <section class="interp-section">
   <div class="interp-panel">
+    <div class="interp-panel-inner">
     <div class="interp-panel-layout">
       <div class="interp-panel-text">
         <h2><svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5.5c-1.6-1-4-1.4-6-1v13c2 0 4.4.4 6 1.4 1.6-1 4-1.4 6-1.4V4.5c-2-.4-4.4 0-6 1Z"/><path d="M12 5.5v13"/></svg>Глубокая расшифровка</h2>
@@ -1039,6 +1057,7 @@
     </div>
     <div id="interp-body"></div>
     <p class="interp-disclaimer">Расшифровка — инструмент для размышления о своей карте, а не научно доказанный факт и не медицинская, юридическая или финансовая рекомендация. Формулировки намеренно вероятностные («часто», «склонность», «может проявляться») — карта показывает тенденции и потенциал, а не жёсткий сценарий.</p>
+    </div>
   </div>
 </section>
 
