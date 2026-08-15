@@ -1,0 +1,23 @@
+{
+  "name": "astra-engine",
+  "version": "0.1.0",
+  "description": "ASTRA astrological calculation engine — astronomical core (astronomy-engine, MIT) + custom astrological layer (houses, aspects, chart types).",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "test": "tsx src/__tests__/run.ts",
+    "demo": "tsx src/__tests__/demo.ts"
+  },
+  "keywords": ["astrology", "astronomy", "natal-chart", "ephemeris"],
+  "author": "",
+  "dependencies": {
+    "astronomy-engine": "^2.1.19"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  }
+}
