@@ -180,23 +180,38 @@ function solveKepler(M: number, e: number): number {
   return E;
 }
 
-export function chironLongitude(moment: EventMoment): NodePosition {
+interface OsculatingElements {
+  a: number; // большая полуось, а.е.
+  e: number; // эксцентриситет
+  i: number; // наклонение, °
+  Omega: number; // долгота восходящего узла, °
+  omega: number; // аргумент перигелия, °
+  M0: number; // средняя аномалия на эпоху, °
+}
+
+/**
+ * Общая двухтельная кеплеровская орбита от оскулирующих элементов на эпоху —
+ * тот же метод, что у Хирона (см. комментарий выше), вынесен в отдельную
+ * функцию, чтобы не дублировать код для каждого малого тела. Используется
+ * и для Хирона, и для главных астероидов ниже.
+ */
+function keplerianGeocentricLongitude(moment: EventMoment, epochJD: number, el: OsculatingElements): NodePosition {
   const time = toAstroTime(moment);
   const jdTT = time.tt + 2451545.0;
   const GM_SUN = 0.01720209895 ** 2; // Гауссова гравитационная постоянная² (а.е.³/сутки²), стандартная величина
 
   const positionAt = (jd: number) => {
-    const dt = jd - CHIRON_EPOCH_JD;
-    const n = Math.sqrt(GM_SUN / CHIRON_ELEMENTS.a ** 3); // среднее движение, рад/сутки
-    const M = (CHIRON_ELEMENTS.M0 * Math.PI) / 180 + n * dt;
-    const E = solveKepler(((M % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI), CHIRON_ELEMENTS.e);
-    const nu = 2 * Math.atan2(Math.sqrt(1 + CHIRON_ELEMENTS.e) * Math.sin(E / 2), Math.sqrt(1 - CHIRON_ELEMENTS.e) * Math.cos(E / 2));
-    const r = CHIRON_ELEMENTS.a * (1 - CHIRON_ELEMENTS.e * Math.cos(E));
+    const dt = jd - epochJD;
+    const n = Math.sqrt(GM_SUN / el.a ** 3); // среднее движение, рад/сутки
+    const M = (el.M0 * Math.PI) / 180 + n * dt;
+    const E = solveKepler(((M % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI), el.e);
+    const nu = 2 * Math.atan2(Math.sqrt(1 + el.e) * Math.sin(E / 2), Math.sqrt(1 - el.e) * Math.cos(E / 2));
+    const r = el.a * (1 - el.e * Math.cos(E));
 
     const toRad = (d: number) => (d * Math.PI) / 180;
-    const om = toRad(CHIRON_ELEMENTS.omega);
-    const Om = toRad(CHIRON_ELEMENTS.Omega);
-    const inc = toRad(CHIRON_ELEMENTS.i);
+    const om = toRad(el.omega);
+    const Om = toRad(el.Omega);
+    const inc = toRad(el.i);
 
     // Гелиоцентрические эклиптические координаты (J2000, приближение — без прецессии, пренебрежимо для этой точности)
     const xh = r * (Math.cos(Om) * Math.cos(om + nu) - Math.sin(Om) * Math.sin(om + nu) * Math.cos(inc));
@@ -205,7 +220,7 @@ export function chironLongitude(moment: EventMoment): NodePosition {
     return { xh, yh, zh };
   };
 
-  // Геоцентрическая позиция = гелиоцентрический Хирон - гелиоцентрическая Земля.
+  // Геоцентрическая позиция = гелиоцентрическое тело - гелиоцентрическая Земля.
   // Земля (гелиоцентрически) = -Солнце (геоцентрически); .vec у Ecliptic() уже
   // даёт декартов вектор в системе истинной эклиптики даты — то, что нужно.
   const lonAt = (jd: number, t: Astronomy.AstroTime) => {
@@ -221,4 +236,71 @@ export function chironLongitude(moment: EventMoment): NodePosition {
   const before = lonAt(jdTT - 0.25, time.AddDays(-0.25));
   const after = lonAt(jdTT + 0.25, time.AddDays(0.25));
   return { longitude: now, speedLongitude: shortestDelta(before, after) / 0.5 };
+}
+
+export function chironLongitude(moment: EventMoment): NodePosition {
+  return keplerianGeocentricLongitude(moment, CHIRON_EPOCH_JD, CHIRON_ELEMENTS);
+}
+
+/**
+ * Церера, Паллада, Юнона, Веста — четыре крупнейших астероида Главного
+ * пояса, традиционно используемые в западной астрологии как "женская
+ * четвёрка" (наравне с планетами, но без официального ранга). Как и Хирон,
+ * не входят в astronomy-engine — считаются той же двухтельной кеплеровской
+ * орбитой от оскулирующих элементов, взятых из JPL Small-Body Database на
+ * эпоху 2026-06-09 00:00 TDB (JD 2461200.5).
+ *
+ * ЧЕСТНОЕ ОГРАНИЧЕНИЕ (как и у Хирона): двухтельное приближение не
+ * учитывает возмущения от Юпитера — точность падает при удалении от эпохи
+ * элементов. Для продакшена элементы стоит обновлять не реже раза в год.
+ */
+const ASTEROID_EPOCH_JD = 2461200.5; // 2026-06-09 00:00 TDB
+
+const CERES_ELEMENTS: OsculatingElements = {
+  a: 2.765552595034094,
+  e: 0.07969229514816586,
+  i: 10.58802780183462,
+  Omega: 80.24862682043221,
+  omega: 73.29421453021587,
+  M0: 274.4193463761342,
+};
+
+const PALLAS_ELEMENTS: OsculatingElements = {
+  a: 2.769559010737709,
+  e: 0.2307000995648547,
+  i: 34.93279321851542,
+  Omega: 172.8866193357694,
+  omega: 310.9699161652136,
+  M0: 254.2496521742734,
+};
+
+const JUNO_ELEMENTS: OsculatingElements = {
+  a: 2.670989527103278,
+  e: 0.2556999836681878,
+  i: 12.98659236598085,
+  Omega: 169.8115953492418,
+  omega: 247.8950743075613,
+  M0: 262.7322944883855,
+};
+
+const VESTA_ELEMENTS: OsculatingElements = {
+  a: 2.361365965127599,
+  e: 0.09020374382834395,
+  i: 7.143925545058711,
+  Omega: 103.701293265032,
+  omega: 151.4686478221564,
+  M0: 81.19015607686903,
+};
+
+export function ceresLongitude(moment: EventMoment): NodePosition {
+  return keplerianGeocentricLongitude(moment, ASTEROID_EPOCH_JD, CERES_ELEMENTS);
+}
+export function pallasLongitude(moment: EventMoment): NodePosition {
+  return keplerianGeocentricLongitude(moment, ASTEROID_EPOCH_JD, PALLAS_ELEMENTS);
+}
+export function junoLongitude(moment: EventMoment): NodePosition {
+  return keplerianGeocentricLongitude(moment, ASTEROID_EPOCH_JD, JUNO_ELEMENTS);
+}
+export function vestaLongitude(moment: EventMoment): NodePosition {
+  return keplerianGeocentricLongitude(moment, ASTEROID_EPOCH_JD, VESTA_ELEMENTS);
 }
