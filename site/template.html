@@ -794,9 +794,8 @@
       </div>
     </div>
 
-    <div class="panel">
-      <p class="warn-note" id="warn-note">Пример условный (не реальные данные клиента) — демонстрирует расчёт. Движок (npm-пакет) отдаёт только числа и их источник; текстовый разбор — ниже, в разделе «Глубокая расшифровка» (по умолчанию — правило-ориентированный слой без AI и бэкенда, опционально — Claude поверх тех же данных, если подключён отдельный сервис; см. README, §«Архитектура»).</p>
-      <p class="warn-note" id="engine-warnings" style="display:none;"></p>
+    <div class="panel" id="engine-warnings-panel" style="display:none;">
+      <p class="warn-note" id="engine-warnings"></p>
     </div>
   </aside>
 </main>
@@ -11080,14 +11079,13 @@ document.getElementById('calc-btn').addEventListener('click', () => {
     currentBirthMoment = moment;
     currentBirthLocation = location;
 
-    const warnEl = document.getElementById('warn-note');
-    warnEl.textContent = 'Это настоящий расчёт по введённым данным (не пример) — движок отдаёт только числа и их источник; текстовый разбор — в разделе «Глубокая расшифровка» ниже.';
     const engineWarnEl = document.getElementById('engine-warnings');
+    const engineWarnPanelEl = document.getElementById('engine-warnings-panel');
     if (DATA.meta.warnings && DATA.meta.warnings.length) {
       engineWarnEl.textContent = DATA.meta.warnings.join(' ');
-      engineWarnEl.style.display = 'block';
+      engineWarnPanelEl.style.display = 'block';
     } else {
-      engineWarnEl.style.display = 'none';
+      engineWarnPanelEl.style.display = 'none';
     }
 
     render();
