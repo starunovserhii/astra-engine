@@ -424,7 +424,8 @@
   #insight-body { display: none; }
   #insight-body.active { display: block; }
   #insight-title { font-size: 1.1rem; color: var(--text); margin: 0 0 0.2rem; }
-  #insight-sub { color: var(--accent); font-size: 0.85rem; margin: 0 0 0.8rem; }
+  #insight-sub { color: var(--accent); font-size: 0.85rem; margin: 0 0 0.6rem; }
+  #insight-desc { color: var(--text-dim); font-size: 0.8rem; line-height: 1.5; margin: 0 0 0.8rem; padding-bottom: 0.7rem; border-bottom: 1px solid var(--border); }
   .fact-row { display: flex; justify-content: space-between; font-size: 0.82rem; padding: 0.3rem 0; border-bottom: 1px solid var(--border); color: var(--text-dim); }
   .fact-row b { color: var(--text); font-weight: 400; }
   #insight-aspects { margin-top: 0.7rem; font-size: 0.8rem; }
@@ -787,6 +788,7 @@
       <div id="insight-body">
         <h3 id="insight-title">—</h3>
         <p id="insight-sub">—</p>
+        <p id="insight-desc">—</p>
         <div class="fact-row"><span>Дом</span><b id="fact-house">—</b></div>
         <div class="fact-row"><span>Ретроградность</span><b id="fact-retro">—</b></div>
         <div class="fact-row"><span>Достоинство</span><b id="fact-dignity">—</b></div>
@@ -1029,6 +1031,37 @@ const PLANET_NAME_RU = {
   MeanLilith: 'Лилит (средняя)', TrueLilith: 'Лилит (истинная)',
   PartOfFortune: 'Парс Фортуны', Vertex: 'Вертекс', AntiVertex: 'Антивертекс',
   Ceres: 'Церера', Pallas: 'Паллада', Juno: 'Юнона', Vesta: 'Веста',
+};
+// Краткое, независимое от конкретной карты описание — «что вообще означает
+// эта планета/точка» (астрологический словарь), для Insight Panel. Это не
+// интерпретация карты клиента (та ниже, зависит от знака/дома/аспектов) —
+// просто общая справка о самой точке, чтобы не нужно было держать в
+// голове весь астрологический словарь при чтении технических данных.
+const POINT_DESCRIPTION_RU = {
+  Sun: 'Ядро личности: воля, жизненная сила, то, каким человек хочет проявляться и быть увиденным.',
+  Moon: 'Эмоциональный мир: инстинктивные реакции, потребность в безопасности, привычные способы заботиться о себе.',
+  Mercury: 'Мышление и коммуникация: как человек воспринимает информацию, рассуждает и говорит.',
+  Venus: 'Ценности и притяжение: что нравится, к чему тянется, стиль в отношениях и эстетике.',
+  Mars: 'Действие и напор: как человек добивается своего, отстаивает границы и проявляет инициативу.',
+  Jupiter: 'Рост и смысл: где ищет расширения, оптимизма, обучения и веры в лучшее.',
+  Saturn: 'Структура и ответственность: где дисциплина, ограничения и зрелость приходят через опыт и время.',
+  Uranus: 'Перемены и независимость: где нужна свобода, где проявляется нестандартность и внезапные сдвиги.',
+  Neptune: 'Воображение и растворение границ: интуиция, мечты, сочувствие, склонность к идеализации.',
+  Pluto: 'Трансформация и глубина: темы силы, контроля и того, что приходится пересобирать заново.',
+  Chiron: 'Уязвимая точка, которая со временем становится источником опыта, который человек может передать другим.',
+  MeanNode: 'Направление роста этой жизни (средняя орбита) — куда стоит двигаться, выходя из привычной зоны комфорта.',
+  TrueNode: 'Направление роста этой жизни (истинная, более точная орбита) — куда стоит двигаться, выходя из привычной зоны комфорта.',
+  MeanSouthNode: 'Врождённые, уже освоенные паттерны (средняя орбита) — опора, которую легко превратить в застой, если не двигаться дальше.',
+  TrueSouthNode: 'Врождённые, уже освоенные паттерны (истинная орбита) — опора, которую легко превратить в застой, если не двигаться дальше.',
+  MeanLilith: 'Вытесненная, неприрученная часть себя (средняя точка орбиты) — то, что не вписывается в ожидания и требует признания.',
+  TrueLilith: 'Вытесненная, неприрученная часть себя (истинная, более точная точка орбиты) — то, что не вписывается в ожидания и требует признания.',
+  PartOfFortune: 'Расчётная точка удачи и естественной лёгкости — где усилие и результат совпадают легче, чем в среднем.',
+  Vertex: 'Расчётная точка значимых «роковых» встреч и поворотных обстоятельств, слабо подконтрольных выбору.',
+  AntiVertex: 'Точка, противоположная Вертексу — зеркальная сторона той же темы значимых внешних встреч.',
+  Ceres: 'Забота и цикл давать/получать: как человек заботится о других и о себе, реакция на потерю и восстановление.',
+  Pallas: 'Стратегическое мышление: способность видеть закономерности, решать задачи и отстаивать позицию через ум, а не силу.',
+  Juno: 'Партнёрство как обязательство: что нужно от длительного союза, чтобы он ощущался справедливым и равным.',
+  Vesta: 'Фокус и преданность делу: где концентрируется энергия, когда человек предан задаче, а не отвлекается.',
 };
 const SIGN_NAME_RU = {
   Aries: 'Овен', Taurus: 'Телец', Gemini: 'Близнецы', Cancer: 'Рак', Leo: 'Лев', Virgo: 'Дева',
@@ -10613,6 +10646,7 @@ function renderInsight(pointHouses) {
   document.getElementById('insight-title').textContent = `${PLANET_GLYPH[p.name] || ''} ${PLANET_NAME_RU[p.name] || p.name}`.trim();
   document.getElementById('insight-sub').textContent = `${SIGN_GLYPH[dispSign.sign]} ${SIGN_NAME_RU[dispSign.sign] || dispSign.sign} ${dispSign.degreeInSign.toFixed(2)}°` +
     (wheelSettings.zodiacMode === 'sidereal' ? ' (сидерически, аянамша Лахири)' : '');
+  document.getElementById('insight-desc').textContent = POINT_DESCRIPTION_RU[p.name] || '';
   document.getElementById('fact-house').textContent = pointHouses[p.name] ? `Дом ${pointHouses[p.name]}` : '—';
   document.getElementById('fact-retro').textContent = p.isRetrograde ? 'Да (R)' : 'Нет';
   document.getElementById('fact-dignity').textContent = dispDignity ? DIGNITY_LABEL[dispDignity] : '—';
