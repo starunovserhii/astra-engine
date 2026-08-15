@@ -197,6 +197,12 @@
   .calc-status { font-size: 0.78rem; color: var(--text-dim); margin: 0.55rem 0 0; min-height: 1em; line-height: 1.5; }
   .calc-status.error { color: #d98a76; }
   .calc-status.ok { color: #8fa9c0; }
+  .city-coords {
+    display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap;
+    font-size: 0.78rem; color: var(--text-dim); margin: 0.35rem 0 0; min-height: 1.2em; line-height: 1.4;
+  }
+  .city-coords .coord-value { font-variant-numeric: tabular-nums; color: var(--text); }
+  .city-coords.not-found { color: #d98a76; }
 
   #insight-empty { color: var(--text-dim); font-size: 0.85rem; line-height: 1.5; }
   #insight-body { display: none; }
@@ -274,6 +280,7 @@
         <label for="birth-city">Город рождения</label>
         <input type="text" id="birth-city" list="city-list" placeholder="Начни вводить название…" value="Москва">
         <datalist id="city-list"></datalist>
+        <p id="city-coords" class="city-coords"></p>
       </div>
       <div class="form-row form-check">
         <label><input type="checkbox" id="manual-toggle"> Не нашли город — указать вручную</label>
@@ -9274,8 +9281,12 @@ const birthCityEl = document.getElementById('birth-city');
 manualToggleEl.addEventListener('change', () => {
   manualFieldsEl.style.display = manualToggleEl.checked ? 'block' : 'none';
   birthCityEl.disabled = manualToggleEl.checked;
+  updateCityCoordsHint();
 });
-birthCityEl.addEventListener('input', (e) => scheduleCityFilter(e.target.value));
+birthCityEl.addEventListener('input', (e) => {
+  scheduleCityFilter(e.target.value);
+  updateCityCoordsHint();
+});
 // поле изначально заполнено значением "Москва" — сразу подставим подходящий
 // список вариантов на случай, если пользователь откроет datalist не печатая
 renderCityOptions(filterCityNames(birthCityEl.value));
@@ -9284,6 +9295,42 @@ function findCity(name) {
   const q = name.trim().toLowerCase();
   return CITIES.find((c) => c.n.toLowerCase() === q);
 }
+
+// --- "окно координат": показывает найденные широту/долготу/часовой пояс
+// прямо под полем города, чтобы было видно, что именно уйдёт в расчёт,
+// ещё до нажатия "Построить карту" ---
+const cityCoordsEl = document.getElementById('city-coords');
+
+function formatCoord(value, posLetter, negLetter) {
+  const letter = value >= 0 ? posLetter : negLetter;
+  return `${Math.abs(value).toFixed(4)}°${letter}`;
+}
+
+function updateCityCoordsHint() {
+  if (manualToggleEl.checked) {
+    cityCoordsEl.textContent = '';
+    cityCoordsEl.className = 'city-coords';
+    return;
+  }
+  const name = birthCityEl.value.trim();
+  if (!name) {
+    cityCoordsEl.textContent = '';
+    cityCoordsEl.className = 'city-coords';
+    return;
+  }
+  const city = findCity(name);
+  if (!city) {
+    cityCoordsEl.textContent = 'Город не найден в базе — выбери вариант из списка или укажи координаты вручную.';
+    cityCoordsEl.className = 'city-coords not-found';
+    return;
+  }
+  cityCoordsEl.innerHTML =
+    'Координаты: <span class="coord-value">' + formatCoord(city.lat, 'N', 'S') + ', ' + formatCoord(city.lon, 'E', 'W') +
+    '</span> · <span class="coord-value">' + city.tz + '</span>';
+  cityCoordsEl.className = 'city-coords';
+}
+// сразу показываем координаты города, заполненного по умолчанию ("Москва")
+updateCityCoordsHint();
 
 function setCalcStatus(text, kind) {
   const el = document.getElementById('calc-status');
